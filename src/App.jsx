@@ -5,7 +5,7 @@ import { traceProgram } from './interpreter.js';
 const defaultProfile = {
   learningNotes: [], interests: ['space'], learningStyle: 'try', focusLength: '10', motion: 'some',
   feedback: 'trace', track: 'coding', theme: 'ocean', font: 'standard', fontSize: 100,
-  plainMode: false, sound: false, xp: 120, streak: 3,
+  plainMode: false, sound: false, darkMode: false, xp: 120, streak: 3,
 };
 
 function loadProfile() {
@@ -26,8 +26,8 @@ function App() {
     return <Onboarding profile={profile} updateProfile={updateProfile} step={onboardingStep} setStep={setOnboardingStep} onFinish={() => { localStorage.setItem('versed-welcomed', 'yes'); setScreen('home'); }} />;
   }
 
-  return <div className={`app theme-${profile.theme} font-${profile.font}`} style={{ '--font-scale': `${profile.fontSize}%` }}>
-    <Header profile={profile} setScreen={setScreen} onSettings={() => setSettingsOpen(true)} />
+  return <div className={`app theme-${profile.theme} font-${profile.font} ${profile.darkMode ? 'dark-mode' : ''}`} style={{ '--font-scale': `${profile.fontSize}%` }}>
+    <Header profile={profile} setScreen={setScreen} onSettings={() => setSettingsOpen(true)} onToggleDarkMode={() => updateProfile({ darkMode: !profile.darkMode })} />
     {screen === 'home' && <Dashboard profile={profile} setScreen={setScreen} />}
     {screen === 'lesson' && <Lesson profile={profile} lessonStep={lessonStep} setLessonStep={setLessonStep} setScreen={setScreen} />}
     {screen === 'playground' && <Playground profile={profile} />}
@@ -36,11 +36,11 @@ function App() {
   </div>;
 }
 
-function Header({ profile, setScreen, onSettings }) {
+function Header({ profile, setScreen, onSettings, onToggleDarkMode }) {
   return <header className="topbar">
     <button className="brand" onClick={() => setScreen('home')} aria-label="Versed home"><span className="brand-mark">V</span><span>versed</span></button>
     <nav aria-label="Main navigation"><button onClick={() => setScreen('home')}>Today</button><button onClick={() => setScreen('map')}>Learning map</button><button onClick={() => setScreen('playground')}>Playground</button></nav>
-    <div className="status"><span className="streak" title="Your current learning streak">{profile.streak} day streak</span><span className="xp">{profile.xp} XP</span><button className="icon-button" title="Open My Settings" onClick={onSettings} aria-label="Open My Settings">Settings</button></div>
+    <div className="status"><span className="streak" title="Your current learning streak">{profile.streak} day streak</span><span className="xp">{profile.xp} XP</span><button className="mode-toggle" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed={profile.darkMode} onClick={onToggleDarkMode}><span className="mode-indicator" aria-hidden="true" /><span>{profile.darkMode ? 'Dark' : 'Light'}</span></button><button className="icon-button" title="Open My Settings" onClick={onSettings} aria-label="Open My Settings">Settings</button></div>
   </header>;
 }
 
@@ -109,7 +109,7 @@ function ConfusionBox({ profile, context = 'variables' }) {
   return <aside className={`confusion ${open ? 'open' : ''}`}><button className="confusion-toggle" onClick={() => setOpen(!open)}>Something confusing?</button>{open && <div className="confusion-dialog"><p className="eyebrow">Let&apos;s untangle it</p><h2>Tell me what feels fuzzy.</h2><textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="For example: I do not get why score changes." /><button className="primary compact" onClick={help} disabled={!message.trim()}>Help me understand</button>{answer && <div className="tutor-answer"><p>{answer}</p><div><button onClick={() => setAnswer('Great. That question helped us find the next small step.')}>That helped</button><button onClick={help}>Still fuzzy</button></div></div>}</div>}</aside>;
 }
 
-function Settings({ profile, updateProfile, close }) { return <div className="modal-backdrop" role="presentation"><section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-head"><div><p className="eyebrow">Always under your control</p><h2 id="settings-title">My Settings</h2></div><button className="icon-button" onClick={close}>Close</button></div><div className="settings-list"><label><span>Theme</span><select value={profile.theme} onChange={(event) => updateProfile({ theme: event.target.value })}><option value="ocean">Calm ocean</option><option value="space">Dark mode space</option><option value="pastel">Soft pastel</option><option value="contrast">High contrast</option><option value="arcade">Retro arcade</option></select></label><label><span>Reading style</span><select value={profile.font} onChange={(event) => updateProfile({ font: event.target.value })}><option value="standard">Standard</option><option value="lexend">Easy-reading</option></select></label><label><span>Text size</span><input type="range" min="90" max="125" value={profile.fontSize} onChange={(event) => updateProfile({ fontSize: event.target.value })} /></label><label className="toggle-row"><span>Plain, literal explanations</span><input type="checkbox" checked={profile.plainMode} onChange={(event) => updateProfile({ plainMode: event.target.checked })} /></label><label className="toggle-row"><span>Gentle sound feedback</span><input type="checkbox" checked={profile.sound} onChange={(event) => updateProfile({ sound: event.target.checked })} /></label></div></section></div>; }
+function Settings({ profile, updateProfile, close }) { return <div className="modal-backdrop" role="presentation"><section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-head"><div><p className="eyebrow">Always under your control</p><h2 id="settings-title">My Settings</h2></div><button className="icon-button" onClick={close}>Close</button></div><div className="settings-list"><label><span>Color theme</span><select value={profile.theme} onChange={(event) => updateProfile({ theme: event.target.value })}><option value="ocean">Calm ocean</option><option value="space">Night space</option><option value="pastel">Soft pastel</option><option value="contrast">High contrast</option><option value="arcade">Retro arcade</option></select></label><label className="toggle-row"><span>Dark mode</span><input type="checkbox" checked={profile.darkMode} onChange={(event) => updateProfile({ darkMode: event.target.checked })} /></label><label><span>Reading style</span><select value={profile.font} onChange={(event) => updateProfile({ font: event.target.value })}><option value="standard">Standard</option><option value="lexend">Easy-reading</option></select></label><label><span>Text size</span><input type="range" min="90" max="125" value={profile.fontSize} onChange={(event) => updateProfile({ fontSize: event.target.value })} /></label><label className="toggle-row"><span>Plain, literal explanations</span><input type="checkbox" checked={profile.plainMode} onChange={(event) => updateProfile({ plainMode: event.target.checked })} /></label><label className="toggle-row"><span>Gentle sound feedback</span><input type="checkbox" checked={profile.sound} onChange={(event) => updateProfile({ sound: event.target.checked })} /></label></div></section></div>; }
 
 function LearningMap({ setScreen }) { const units = ['Programs', 'Variables', 'Input / output', 'Conditions', 'Loops', 'Functions', 'Lists', 'Debugging']; return <main className="page map-page"><p className="eyebrow">Coding path</p><h1>Your learning map</h1><p className="map-intro">The whole path is visible. You are right here, and you can explore in your own order.</p><div className="map-road">{units.map((unit, index) => <button onClick={() => index === 0 && setScreen('lesson')} className={`map-node ${index === 0 ? 'current' : ''}`} key={unit}><span>{index + 1}</span><strong>{unit}</strong><small>{index === 0 ? 'Start here' : 'Coming up'}</small></button>)}</div></main>; }
 
