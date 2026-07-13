@@ -5,8 +5,19 @@ import { traceProgram } from './interpreter.js';
 const defaultProfile = {
   learningNotes: [], interests: ['space'], learningStyle: 'try', focusLength: '10', motion: 'some',
   feedback: 'trace', track: 'coding', theme: 'ocean', font: 'standard', fontSize: 100,
+  pathway: 'blended', readingPreference: 'standard', codingExperience: 'never',
   plainMode: false, sound: false, darkMode: false, xp: 120, streak: 3,
 };
+
+function derivePathway(notes = []) {
+  const privateChoice = notes.includes('none') || notes.includes('private') || notes.includes('multiple');
+  const selectedPathways = notes.filter((note) => ['autism', 'adhd', 'dyslexia', 'dyscalculia'].includes(note));
+  return privateChoice || selectedPathways.length !== 1 ? 'blended' : selectedPathways[0];
+}
+
+function getPathwayLabel(pathway) {
+  return { autism: 'Structured', adhd: 'Momentum', dyslexia: 'Readable', dyscalculia: 'Concrete', blended: 'Blended' }[pathway] || 'Blended';
+}
 
 function loadProfile() {
   try { return { ...defaultProfile, ...JSON.parse(localStorage.getItem('versed-profile')) }; } catch { return defaultProfile; }
@@ -50,8 +61,10 @@ function Onboarding({ profile, updateProfile, step, setStep, onFinish }) {
   const select = (option) => {
     if (question.type === 'multi' || question.type === 'interests') {
       const next = value.includes(option) ? value.filter((item) => item !== option) : [...value, option];
-      updateProfile({ [question.id]: next });
-    } else updateProfile({ [question.id]: option });
+      updateProfile({ [question.id]: next, ...(question.id === 'learningNotes' ? { pathway: derivePathway(next) } : {}) });
+    } else {
+      updateProfile({ [question.id]: option, ...(question.id === 'readingPreference' && ['friendly', 'both'].includes(option) ? { font: 'lexend' } : {}) });
+    }
   };
   const canAdvance = question.type === 'multi' || question.type === 'interests' ? value.length > 0 : Boolean(value);
   return <main className="onboarding-shell">
@@ -68,7 +81,8 @@ function Choice({ label, selected, onClick, className = '' }) { return <button c
 function Dashboard({ profile, setScreen }) {
   const interest = profile.interests[0] || 'space';
   const subject = profile.track === 'math' ? 'Math' : 'Coding';
-  return <main className="page dashboard"><section className="welcome"><div><p className="eyebrow">Your next small win</p><h1>Ready when you are.</h1><p>Today is a {profile.focusLength}-minute {subject.toLowerCase()} session. You decide the pace.</p><button className="primary" onClick={() => setScreen('lesson')}>Start today&apos;s lesson</button></div><div className="today-meter"><span>Today</span><strong>0 / {profile.focusLength} min</strong><div className="meter"><i /></div><small>One gentle session is plenty.</small></div></section>
+  const pathway = profile.pathway || derivePathway(profile.learningNotes);
+  return <main className="page dashboard"><section className="welcome"><div><div className="welcome-meta"><p className="eyebrow">Your next small win</p><span className="pathway-badge">{getPathwayLabel(pathway)} pathway</span></div><h1>Ready when you are.</h1><p>Today is a {profile.focusLength}-minute {subject.toLowerCase()} session. You decide the pace.</p><button className="primary" onClick={() => setScreen('lesson')}>Start today&apos;s lesson</button></div><div className="today-meter"><span>Today</span><strong>0 / {profile.focusLength} min</strong><div className="meter"><i /></div><small>One gentle session is plenty.</small></div></section>
     <section className="agenda"><div className="section-heading"><div><p className="eyebrow">A clear path</p><h2>Today&apos;s plan</h2></div><span className="duration">About {profile.focusLength} min</span></div><div className="agenda-steps">{lessonSteps.map((item, index) => <div className={index === 0 ? 'agenda-item active' : 'agenda-item'} key={item}><span>{index + 1}</span><div><strong>{item}</strong><small>{['See instructions become a program', 'Meet variables', 'Run and trace your code', 'Make a score counter'][index]}</small></div></div>)}</div></section>
     <section className="two-column"><div className="lesson-card"><p className="eyebrow">Coding path · Unit 1</p><h2>Programs give clear instructions</h2><p>Make a tiny {interest}-themed score counter, then watch the computer follow it one line at a time.</p><button className="secondary" onClick={() => setScreen('lesson')}>Continue lesson</button></div><div className="progress-card"><p className="eyebrow">Your momentum</p><div className="progress-number"><strong>1</strong><span>lesson ready to explore</span></div><div className="badge-row"><span>First steps</span><span>Curious mind</span></div></div></section>
   </main>;
@@ -109,7 +123,7 @@ function ConfusionBox({ profile, context = 'variables' }) {
   return <aside className={`confusion ${open ? 'open' : ''}`}><button className="confusion-toggle" onClick={() => setOpen(!open)}>Something confusing?</button>{open && <div className="confusion-dialog"><p className="eyebrow">Let&apos;s untangle it</p><h2>Tell me what feels fuzzy.</h2><textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="For example: I do not get why score changes." /><button className="primary compact" onClick={help} disabled={!message.trim()}>Help me understand</button>{answer && <div className="tutor-answer"><p>{answer}</p><div><button onClick={() => setAnswer('Great. That question helped us find the next small step.')}>That helped</button><button onClick={help}>Still fuzzy</button></div></div>}</div>}</aside>;
 }
 
-function Settings({ profile, updateProfile, close }) { return <div className="modal-backdrop" role="presentation"><section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-head"><div><p className="eyebrow">Always under your control</p><h2 id="settings-title">My Settings</h2></div><button className="icon-button" onClick={close}>Close</button></div><div className="settings-list"><label><span>Color theme</span><select value={profile.theme} onChange={(event) => updateProfile({ theme: event.target.value })}><option value="ocean">Calm ocean</option><option value="space">Night space</option><option value="pastel">Soft pastel</option><option value="contrast">High contrast</option><option value="arcade">Retro arcade</option></select></label><label className="toggle-row"><span>Dark mode</span><input type="checkbox" checked={profile.darkMode} onChange={(event) => updateProfile({ darkMode: event.target.checked })} /></label><label><span>Reading style</span><select value={profile.font} onChange={(event) => updateProfile({ font: event.target.value })}><option value="standard">Standard</option><option value="lexend">Easy-reading</option></select></label><label><span>Text size</span><input type="range" min="90" max="125" value={profile.fontSize} onChange={(event) => updateProfile({ fontSize: event.target.value })} /></label><label className="toggle-row"><span>Plain, literal explanations</span><input type="checkbox" checked={profile.plainMode} onChange={(event) => updateProfile({ plainMode: event.target.checked })} /></label><label className="toggle-row"><span>Gentle sound feedback</span><input type="checkbox" checked={profile.sound} onChange={(event) => updateProfile({ sound: event.target.checked })} /></label></div></section></div>; }
+function Settings({ profile, updateProfile, close }) { return <div className="modal-backdrop" role="presentation"><section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-head"><div><p className="eyebrow">Always under your control</p><h2 id="settings-title">My Settings</h2></div><button className="icon-button" onClick={close}>Close</button></div><div className="settings-list"><label><span>Color theme</span><select value={profile.theme} onChange={(event) => updateProfile({ theme: event.target.value })}><option value="ocean">Calm ocean</option><option value="space">Night space</option><option value="pastel">Soft pastel</option><option value="contrast">High contrast</option><option value="arcade">Retro arcade</option></select></label><label><span>Learning pathway</span><select value={profile.pathway || derivePathway(profile.learningNotes)} onChange={(event) => updateProfile({ pathway: event.target.value })}><option value="blended">Blended</option><option value="autism">Structured</option><option value="adhd">Momentum</option><option value="dyslexia">Readable</option><option value="dyscalculia">Concrete</option></select></label><label className="toggle-row"><span>Dark mode</span><input type="checkbox" checked={profile.darkMode} onChange={(event) => updateProfile({ darkMode: event.target.checked })} /></label><label><span>Reading style</span><select value={profile.font} onChange={(event) => updateProfile({ font: event.target.value })}><option value="standard">Standard</option><option value="lexend">Easy-reading</option></select></label><label><span>Text size</span><input type="range" min="90" max="125" value={profile.fontSize} onChange={(event) => updateProfile({ fontSize: event.target.value })} /></label><label className="toggle-row"><span>Plain, literal explanations</span><input type="checkbox" checked={profile.plainMode} onChange={(event) => updateProfile({ plainMode: event.target.checked })} /></label><label className="toggle-row"><span>Gentle sound feedback</span><input type="checkbox" checked={profile.sound} onChange={(event) => updateProfile({ sound: event.target.checked })} /></label></div></section></div>; }
 
 function LearningMap({ setScreen }) { const units = ['Programs', 'Variables', 'Input / output', 'Conditions', 'Loops', 'Functions', 'Lists', 'Debugging']; return <main className="page map-page"><p className="eyebrow">Coding path</p><h1>Your learning map</h1><p className="map-intro">The whole path is visible. You are right here, and you can explore in your own order.</p><div className="map-road">{units.map((unit, index) => <button onClick={() => index === 0 && setScreen('lesson')} className={`map-node ${index === 0 ? 'current' : ''}`} key={unit}><span>{index + 1}</span><strong>{unit}</strong><small>{index === 0 ? 'Start here' : 'Coming up'}</small></button>)}</div></main>; }
 

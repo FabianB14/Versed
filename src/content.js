@@ -5,40 +5,49 @@ export const interestOptions = [
 
 export const onboarding = [
   {
-    id: 'learningNotes', type: 'multi', eyebrow: '1 of 8', title: 'Which of these sounds like you?',
-    subtitle: 'Choose any that feel useful. You can change this whenever you like.',
+    id: 'learningNotes', type: 'multi', eyebrow: '1 of 10', title: 'Have you been diagnosed with, or do you identify with, any of these?',
+    subtitle: 'Choose anything that helps this space fit you. Sharing is optional, and you can change this anytime.',
     options: [
-      ['autism', 'I like clear structure and knowing what is next'],
-      ['adhd', 'I do well with small wins and variety'],
-      ['dyslexia', 'Reading takes extra effort for me'],
-      ['dyscalculia', 'Numbers sometimes feel slippery'],
-      ['custom', 'A mix of things'],
-      ['none', 'Just tune it to me'],
+      ['autism', 'Autism'],
+      ['adhd', 'ADHD'],
+      ['dyslexia', 'Dyslexia'],
+      ['dyscalculia', 'Dyscalculia'],
+      ['multiple', 'More than one'],
+      ['none', 'No diagnosis'],
+      ['private', 'Prefer not to say'],
     ],
   },
-  { id: 'interests', type: 'interests', eyebrow: '2 of 8', title: 'What do you love?', subtitle: 'Your choices shape examples, projects, and explanations.' },
+  { id: 'interests', type: 'interests', eyebrow: '2 of 10', title: 'What do you love?', subtitle: 'Your choices shape examples, projects, and explanations.' },
   {
-    id: 'learningStyle', type: 'single', eyebrow: '3 of 8', title: 'How do you like to learn something new?',
+    id: 'learningStyle', type: 'single', eyebrow: '3 of 10', title: 'How do you like to learn something new?',
     options: [['watch', 'Watch it happen'], ['read', 'Read it slowly'], ['try', 'Try it myself immediately'], ['story', 'Hear it as a story']],
   },
   {
-    id: 'focusLength', type: 'single', eyebrow: '4 of 8', title: 'How long feels good before a break?',
+    id: 'focusLength', type: 'single', eyebrow: '4 of 10', title: 'How long feels good before a break?',
     options: [['5', '5 minutes'], ['10', '10 minutes'], ['15', '15 minutes'], ['25', '25 minutes'], ['choose', 'Let me choose each time']],
   },
   {
-    id: 'motion', type: 'single', eyebrow: '5 of 8', title: 'Sounds and animations?',
+    id: 'motion', type: 'single', eyebrow: '5 of 10', title: 'Sounds and animations?',
     options: [['full', 'Love them, bring it on'], ['some', 'Some is fine'], ['calm', 'Keep it calm and quiet']],
   },
   {
-    id: 'feedback', type: 'single', eyebrow: '6 of 8', title: 'When something feels tricky, what helps?',
+    id: 'readingPreference', type: 'single', eyebrow: '6 of 10', title: 'What helps reading feel comfortable?',
+    options: [['standard', 'Regular text'], ['friendly', 'Easy-reading font and extra space'], ['listen', 'Read it out loud'], ['both', 'Easy-reading font and read aloud']],
+  },
+  {
+    id: 'feedback', type: 'single', eyebrow: '7 of 10', title: 'When something feels tricky, what helps?',
     options: [['trace', 'Show me step by step'], ['hint', 'Give me a hint first'], ['example', 'Show a similar example']],
   },
   {
-    id: 'track', type: 'single', eyebrow: '7 of 8', title: 'What would you like to explore?',
+    id: 'track', type: 'single', eyebrow: '8 of 10', title: 'What would you like to explore?',
     options: [['coding', 'Coding'], ['math', 'Math'], ['both', 'Both']],
   },
   {
-    id: 'theme', type: 'theme', eyebrow: '8 of 8', title: 'Pick a vibe', subtitle: 'This is your space. Make it feel like yours.',
+    id: 'codingExperience', type: 'single', eyebrow: '9 of 10', title: 'Have you ever coded before?',
+    options: [['never', 'Never'], ['little', 'A little'], ['some', 'Some'], ['lots', 'A lot']],
+  },
+  {
+    id: 'theme', type: 'theme', eyebrow: '10 of 10', title: 'Pick a vibe', subtitle: 'This is your space. Make it feel like yours.',
     options: [['ocean', 'Calm ocean'], ['space', 'Dark mode space'], ['pastel', 'Soft pastel'], ['contrast', 'High contrast'], ['arcade', 'Retro arcade']],
   },
 ];
