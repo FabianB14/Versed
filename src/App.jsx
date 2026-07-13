@@ -10,12 +10,62 @@ const defaultProfile = {
 };
 
 const defaultSession = {
+  lessonIndex: 0,
   lessonStep: 0,
   elapsedSeconds: 0,
+  durationMinutes: 10,
   timerRunning: false,
   playgroundComplete: false,
   completed: false,
+  completedLessonIndexes: [],
 };
+
+const courseLessons = [
+  {
+    title: 'Programs give clear instructions',
+    summary: 'Make a score change, then watch a computer follow each instruction.',
+    playgroundPrompt: 'Run the score program, then trace how the value changes line by line.',
+    steps: [
+      { title: 'Warm-up: computers are very literal', body: 'A program is a list of instructions. The computer follows each one in order, exactly as written.', action: 'Continue to variables' },
+      { title: 'New idea: variables hold values', body: 'A variable has a name and a value. The program can store a value there, change it, and use it later.', action: 'Open step 3: playground' },
+      { title: 'Playground: follow the score', body: 'Run a starter program, then use the tracer to see how the score changes.', action: 'Open playground' },
+      { title: 'Challenge: make the score grow', body: 'Change one value in the starter program and run it again. Notice what changes in the output.', action: 'Finish this lesson' },
+    ],
+  },
+  {
+    title: 'Conditions make choices',
+    summary: 'Learn how a program can check a value before choosing what to do next.',
+    playgroundPrompt: 'Try changing a score value, then trace what the program decides to do.',
+    steps: [
+      { title: 'Warm-up: programs can make choices', body: 'A condition checks whether something is true or false. That check helps the program decide which instruction comes next.', action: 'Continue to conditions' },
+      { title: 'New idea: compare a value', body: 'A comparison asks a small question, such as whether score is greater than 3. The answer guides the next step.', action: 'Open step 3: playground' },
+      { title: 'Playground: trace a decision', body: 'Run the starter program and look for the point where the program checks a condition.', action: 'Open playground' },
+      { title: 'Challenge: change the decision', body: 'Try a different starting value and predict whether the condition will be true before you run the code.', action: 'Finish this lesson' },
+    ],
+  },
+  {
+    title: 'Loops repeat useful work',
+    summary: 'Use a loop to repeat a small instruction without writing it again and again.',
+    playgroundPrompt: 'Run the loop program, then trace how the score changes on each repeat.',
+    steps: [
+      { title: 'Warm-up: repetition saves effort', body: 'When a program needs to do the same kind of action several times, a loop gives it a clear repeat instruction.', action: 'Continue to loops' },
+      { title: 'New idea: count each repeat', body: 'A loop can use a counter to keep track of how many times it has repeated. Each pass can change a value.', action: 'Open step 3: playground' },
+      { title: 'Playground: watch the loop work', body: 'Run the starter loop, then step through it to see the value update each time.', action: 'Open playground' },
+      { title: 'Challenge: make one more repeat', body: 'Change the repeat count or the amount added to the score, then predict the final output.', action: 'Finish this lesson' },
+    ],
+  },
+  {
+    title: 'Debugging is careful noticing',
+    summary: 'Use the output and tracer to check what the program actually did.',
+    playgroundPrompt: 'Change one line, run the program, and use the tracer to explain the result.',
+    steps: [
+      { title: 'Warm-up: errors are clues', body: 'When a program does something unexpected, the result is useful information. Start by noticing what changed.', action: 'Continue to checking results' },
+      { title: 'New idea: compare expectation and output', body: 'Make a small prediction before you run code. Then compare it with the output to find the next thing to investigate.', action: 'Open step 3: playground' },
+      { title: 'Playground: test one small change', body: 'Change one number in the starter program, run it, then trace the result to see why it changed.', action: 'Open playground' },
+      { title: 'Challenge: explain the result', body: 'Use the variable panel and output to explain the program in your own words. You are now debugging on purpose.', action: 'Finish this lesson' },
+    ],
+  },
+];
 
 function derivePathway(notes = []) {
   const selected = notes.filter((note) => ['autism', 'adhd', 'dyslexia', 'dyscalculia'].includes(note));
@@ -44,6 +94,11 @@ function formatDuration(seconds) {
   return `${minutes}:${remainingSeconds}`;
 }
 
+function getFocusMinutes(value) {
+  const minutes = Number(value);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes : 10;
+}
+
 function hasStartedSession(session) {
   return session.timerRunning || session.elapsedSeconds > 0 || session.lessonStep > 0 || session.playgroundComplete;
 }
@@ -66,9 +121,20 @@ function App() {
   const updateProfile = (patch) => setProfile((current) => ({ ...current, ...patch }));
   const setLessonStep = (lessonStep) => setSession((current) => ({ ...current, lessonStep }));
   const startLesson = () => {
-    setSession((current) => current.completed ? { ...defaultSession, timerRunning: true } : { ...current, timerRunning: true });
+    setSession((current) => {
+      if (!current.completed) return { ...current, timerRunning: true };
+      const restartCourse = current.lessonIndex >= courseLessons.length - 1;
+      return {
+        ...defaultSession,
+        lessonIndex: restartCourse ? 0 : current.lessonIndex + 1,
+        durationMinutes: current.durationMinutes || getFocusMinutes(profile.focusLength),
+        completedLessonIndexes: restartCourse ? [] : current.completedLessonIndexes || [],
+        timerRunning: true,
+      };
+    });
     setScreen('lesson');
   };
+  const setSessionDuration = (durationMinutes) => setSession((current) => ({ ...current, durationMinutes }));
   const toggleTimer = () => setSession((current) => ({ ...current, timerRunning: !current.timerRunning }));
   const openPlayground = () => {
     setSession((current) => ({ ...current, lessonStep: 2 }));
@@ -80,8 +146,12 @@ function App() {
     setScreen('lesson');
   };
   const finishLesson = () => {
-    setSession((current) => ({ ...current, completed: true, timerRunning: false, lessonStep: 3 }));
+    setSession((current) => ({ ...current, completed: true, timerRunning: false, lessonStep: 3, completedLessonIndexes: [...new Set([...(current.completedLessonIndexes || []), current.lessonIndex])] }));
     updateProfile({ xp: profile.xp + 10 });
+    setScreen('home');
+  };
+  const selectLesson = (lessonIndex) => {
+    setSession((current) => ({ ...defaultSession, lessonIndex, durationMinutes: current.durationMinutes || getFocusMinutes(profile.focusLength), completedLessonIndexes: current.completedLessonIndexes || [] }));
     setScreen('home');
   };
   const resetProfile = () => {
@@ -101,10 +171,10 @@ function App() {
 
   return <div className={`app theme-${profile.theme} font-${profile.font} ${profile.darkMode ? 'dark-mode' : ''}`} style={{ '--font-scale': `${profile.fontSize}%` }}>
     <Header profile={profile} setScreen={setScreen} onSettings={() => setSettingsOpen(true)} onToggleDarkMode={() => updateProfile({ darkMode: !profile.darkMode })} />
-    {screen === 'home' && <Dashboard profile={profile} session={session} updateProfile={updateProfile} onStartLesson={startLesson} onToggleTimer={toggleTimer} />}
+    {screen === 'home' && <Dashboard profile={profile} session={session} updateProfile={updateProfile} onStartLesson={startLesson} onToggleTimer={toggleTimer} onSetSessionDuration={setSessionDuration} />}
     {screen === 'lesson' && <Lesson profile={profile} session={session} setLessonStep={setLessonStep} setScreen={setScreen} onOpenPlayground={openPlayground} onFinishLesson={finishLesson} onToggleTimer={toggleTimer} />}
     {screen === 'playground' && <Playground profile={profile} session={session} updateProfile={updateProfile} onProgramRun={markProgramRun} onContinueLesson={continueFromPlayground} onReturnToLesson={() => setScreen('lesson')} onStartLesson={startLesson} />}
-    {screen === 'map' && <LearningMap profile={profile} setScreen={setScreen} />}
+    {screen === 'map' && <LearningMap profile={profile} session={session} onSelectLesson={selectLesson} />}
     {settingsOpen && <Settings profile={profile} updateProfile={updateProfile} close={() => setSettingsOpen(false)} onReset={resetProfile} />}
   </div>;
 }
@@ -143,34 +213,34 @@ function Onboarding({ profile, updateProfile, step, setStep, onFinish }) {
 
 function Choice({ label, selected, onClick, className = '' }) { return <button className={`choice ${selected ? 'selected' : ''} ${className}`} onClick={onClick}><span>{label}</span>{selected && <b>Selected</b>}</button>; }
 
-function Dashboard({ profile, session, updateProfile, onStartLesson, onToggleTimer }) {
-  const interest = profile.interests[0] || 'space';
+function Dashboard({ profile, session, updateProfile, onStartLesson, onToggleTimer, onSetSessionDuration }) {
   const subject = profile.track === 'math' ? 'Math' : 'Coding';
   const pathway = profile.pathway || derivePathway(profile.learningNotes);
   const greeting = profile.name ? `, ${profile.name}` : '';
+  const unit = courseLessons[session.lessonIndex] || courseLessons[0];
+  const nextUnit = courseLessons[session.lessonIndex + 1];
   const hasStarted = hasStartedSession(session);
-  const goalSeconds = Number(profile.focusLength) * 60;
+  const flexibleLength = profile.focusLength === 'choose';
+  const durationMinutes = session.durationMinutes || getFocusMinutes(profile.focusLength);
+  const goalSeconds = durationMinutes * 60;
   const timeProgress = Math.min(100, session.elapsedSeconds / goalSeconds * 100);
-  const mainAction = session.completed ? 'Start a new lesson' : hasStarted ? 'Continue today\'s lesson' : 'Start today\'s lesson';
+  const mainAction = session.completed ? nextUnit ? 'Start next lesson' : 'Restart the course' : hasStarted ? 'Continue this lesson' : 'Start this lesson';
   const timerLabel = session.completed ? 'Session complete' : session.timerRunning ? 'Timer running' : hasStarted ? 'Timer paused' : 'Ready when you are';
   const currentStep = session.completed ? 4 : session.lessonStep;
-  return <main className="page dashboard"><section className="welcome"><div><div className="welcome-meta"><p className="eyebrow">Your next small win</p><span className="pathway-badge">{getPathwayLabel(pathway)} pathway</span></div><h1>Ready when you are{greeting}.</h1><p>Today is a {profile.focusLength}-minute {subject.toLowerCase()} session. You decide the pace.</p><button className="primary main-lesson-action" onClick={onStartLesson}>{mainAction}</button></div><div className="today-meter"><span>{timerLabel}</span><strong>{formatDuration(session.elapsedSeconds)} / {formatDuration(goalSeconds)}</strong><div className="meter"><i style={{ width: `${timeProgress}%` }} /></div><small>{session.completed ? 'You completed this lesson.' : hasStarted ? `Step ${currentStep + 1} of 4: ${lessonSteps[currentStep]}` : 'The timer starts when you begin.'}</small>{hasStarted && !session.completed && <button className="timer-control" onClick={onToggleTimer}>{session.timerRunning ? 'Pause timer' : 'Resume timer'}</button>}</div></section>
+  const completionMessage = nextUnit ? `Lesson complete. Next: ${nextUnit.title}.` : 'You completed the full course. Restart it anytime for another pass.';
+  return <main className="page dashboard"><section className="welcome"><div><div className="welcome-meta"><p className="eyebrow">Your next small win</p><span className="pathway-badge">{getPathwayLabel(pathway)} pathway</span></div><h1>Ready when you are{greeting}.</h1><p>{flexibleLength ? `This is a flexible ${subject.toLowerCase()} session, set to ${durationMinutes} minutes.` : `Today is a ${durationMinutes}-minute ${subject.toLowerCase()} session. You decide the pace.`}</p>{flexibleLength && (!hasStarted || session.completed) && <div className="duration-picker" role="group" aria-label="Choose session length"><span>Session length</span>{[5, 10, 15, 25].map((minutes) => <button key={minutes} className={durationMinutes === minutes ? 'active' : ''} onClick={() => onSetSessionDuration(minutes)}>{minutes} min</button>)}</div>}<button className="primary main-lesson-action" onClick={onStartLesson}>{mainAction}</button></div><div className="today-meter"><span>{timerLabel}</span><strong>{formatDuration(session.elapsedSeconds)} / {formatDuration(goalSeconds)}</strong><div className="meter"><i style={{ width: `${timeProgress}%` }} /></div><small>{session.completed ? completionMessage : hasStarted ? `Unit ${session.lessonIndex + 1}, step ${currentStep + 1} of 4: ${lessonSteps[currentStep]}` : `Unit ${session.lessonIndex + 1} of ${courseLessons.length}: ${unit.title}`}</small>{hasStarted && !session.completed && <button className="timer-control" onClick={onToggleTimer}>{session.timerRunning ? 'Pause timer' : 'Resume timer'}</button>}</div></section>
     <section className="agenda"><div className="section-heading"><div><p className="eyebrow">A clear path</p><h2>Today&apos;s plan</h2></div><span className="duration">{session.completed ? 'Completed' : `Step ${currentStep + 1} of 4`}</span></div><div className="agenda-steps">{lessonSteps.map((item, index) => <div className={`agenda-item ${session.completed || index < session.lessonStep ? 'done' : ''} ${!session.completed && index === session.lessonStep ? 'active' : ''}`} key={item}><span>{session.completed || index < session.lessonStep ? 'Done' : index + 1}</span><div><strong>{item}</strong><small>{['See instructions become a program', 'Meet variables', 'Run and trace your code', 'Make a score counter'][index]}</small></div></div>)}</div></section>
     <section className="level-section"><div className="section-heading"><div><p className="eyebrow">Choose your challenge</p><h2>Learning levels</h2></div><span className="duration">Current: {profile.level}</span></div><div className="level-grid">{levelOptions.map(([id, label, description]) => <button key={id} className={`level-card ${profile.level === id ? 'active' : ''}`} onClick={() => updateProfile({ level: id })}><span>{label}</span><small>{description}</small>{profile.level === id && <b>Selected</b>}</button>)}</div></section>
-    <section className="two-column"><div className="lesson-card"><p className="eyebrow">Coding path - Unit 1</p><h2>{session.completed ? 'You completed today\'s lesson.' : 'Programs give clear instructions'}</h2><p>{session.completed ? 'Your progress is saved. Start a new session whenever you are ready.' : `Make a tiny ${interest}-themed score counter, then watch the computer follow it one line at a time.`}</p><button className="primary" onClick={onStartLesson}>{mainAction}</button></div><div className="progress-card"><p className="eyebrow">Your momentum</p><div className="progress-number"><strong>{session.completed ? 4 : currentStep + 1}</strong><span>{session.completed ? 'lesson complete' : 'of 4 lesson steps'}</span></div><div className="badge-row"><span>{session.timerRunning ? 'Timer running' : 'Progress saved'}</span><span>{profile.level} level</span></div></div></section>
+    <section className="two-column"><div className="lesson-card"><p className="eyebrow">Coding path - Unit {session.lessonIndex + 1} of {courseLessons.length}</p><h2>{session.completed ? completionMessage : unit.title}</h2><p>{session.completed ? nextUnit ? nextUnit.summary : 'Every unit is available from your learning map whenever you want to revisit an idea.' : unit.summary}</p><button className="primary" onClick={onStartLesson}>{mainAction}</button></div><div className="progress-card"><p className="eyebrow">Your momentum</p><div className="progress-number"><strong>{session.completed ? 4 : currentStep + 1}</strong><span>{session.completed ? 'lesson complete' : 'of 4 lesson steps'}</span></div><div className="badge-row"><span>{session.timerRunning ? 'Timer running' : 'Progress saved'}</span><span>{session.completedLessonIndexes.length} of {courseLessons.length} units complete</span></div></div></section>
   </main>;
 }
 
 function Lesson({ profile, session, setLessonStep, setScreen, onOpenPlayground, onFinishLesson, onToggleTimer }) {
   const lessonStep = session.lessonStep;
-  const details = [
-    { title: 'Warm-up: computers are very literal', body: 'A program is a list of instructions. The computer follows each one in order, exactly as written.', action: 'Continue to variables' },
-    { title: 'New idea: variables hold values', body: `Think of a variable as ${getAnalogy(profile, 'variable')}. It has a name, and the program can look inside it later.`, action: 'Open step 3: playground' },
-    { title: 'Playground: follow the score', body: 'Run a starter program, then use the tracer. Once it runs, a clear Continue to challenge button appears in the playground.', action: 'Open playground' },
-    { title: 'Challenge: make the score grow', body: 'You ran a real program and traced its result. That is the full loop: understand, run, trace, then reflect.', action: 'Finish today\'s lesson' },
-  ][lessonStep];
+  const unit = courseLessons[session.lessonIndex] || courseLessons[0];
+  const details = unit.steps[lessonStep];
   const next = () => { if (lessonStep === 1 || lessonStep === 2) { onOpenPlayground(); return; } if (lessonStep === 3) { onFinishLesson(); return; } setLessonStep(lessonStep + 1); };
-  return <main className="page lesson-page"><LessonNav step={lessonStep} session={session} setScreen={setScreen} onToggleTimer={onToggleTimer} /><section className="lesson-main"><p className="eyebrow">Step {lessonStep + 1} of 4 - {lessonSteps[lessonStep]}</p><h1>{details.title}</h1><p className="lesson-body">{details.body}</p><div className="flow-callout"><strong>Lesson flow</strong><span>Warm-up</span><i /> <span>Variables</span><i /> <span className={lessonStep === 2 ? 'flow-current' : ''}>Playground</span><i /> <span>Challenge</span></div><div className="lesson-visual"><div className="instruction-row"><span>1</span><p>Put <b>0</b> into <b>score</b></p></div><div className="instruction-row active"><span>2</span><p>Add <b>1</b> to <b>score</b></p></div><div className="instruction-row"><span>3</span><p>Show <b>score</b></p></div><div className="value-box"><small>score</small><strong>1</strong></div></div><div className="lesson-actions"><button className="text-button" onClick={() => setLessonStep(Math.max(0, lessonStep - 1))} disabled={!lessonStep}>Previous</button><button className="primary" onClick={next}>{details.action}</button></div></section><ConfusionBox profile={profile} /></main>;
+  return <main className="page lesson-page"><LessonNav step={lessonStep} session={session} setScreen={setScreen} onToggleTimer={onToggleTimer} /><section className="lesson-main"><p className="eyebrow">Unit {session.lessonIndex + 1} of {courseLessons.length} - Step {lessonStep + 1} of 4</p><h1>{details.title}</h1><p className="lesson-body">{details.body}</p><div className="flow-callout"><strong>{unit.title}</strong><span>Warm-up</span><i /> <span>New idea</span><i /> <span className={lessonStep === 2 ? 'flow-current' : ''}>Playground</span><i /> <span>Challenge</span></div><div className="lesson-visual"><div className="instruction-row"><span>1</span><p>Read the program&apos;s next instruction</p></div><div className="instruction-row active"><span>2</span><p>Notice how the current value changes</p></div><div className="instruction-row"><span>3</span><p>Check the output and explain the result</p></div><div className="value-box"><small>step</small><strong>{lessonStep + 1}</strong></div></div><div className="lesson-actions"><button className="text-button" onClick={() => setLessonStep(Math.max(0, lessonStep - 1))} disabled={!lessonStep}>Previous</button><button className="primary" onClick={next}>{details.action}</button></div></section><ConfusionBox profile={profile} /></main>;
 }
 
 function LessonNav({ step, session, setScreen, onToggleTimer }) { return <aside className="lesson-nav"><button className="back-link" onClick={() => setScreen('home')}>Back to today</button><p className="eyebrow">Today&apos;s plan</p>{lessonSteps.map((item, index) => <div key={item} className={`lesson-nav-item ${index === step ? 'current' : ''} ${index < step ? 'done' : ''}`}><span>{index < step ? 'Done' : index + 1}</span>{item}</div>)}<div className="timer-card"><small>{session.timerRunning ? 'Session timer running' : 'Session timer paused'}</small><strong>{formatDuration(session.elapsedSeconds)}</strong><p>Your place is saved as you go.</p><button className="timer-control" onClick={onToggleTimer}>{session.timerRunning ? 'Pause timer' : 'Resume timer'}</button></div></aside>; }
@@ -182,6 +252,7 @@ function Playground({ profile, session, updateProfile, onProgramRun, onContinueL
   const [step, setStep] = useState(-1);
   const [auto, setAuto] = useState(false);
   const [runOutput, setRunOutput] = useState(null);
+  const unit = courseLessons[session.lessonIndex] || courseLessons[0];
   const inLessonFlow = session.lessonStep === 2 && !session.completed;
   const sessionInProgress = hasStartedSession(session) && !session.completed;
   const current = step >= 0 ? trace.steps[step] : { variables: {}, output: [], line: 0, explanation: 'Run the program to get the answer, then Step through to watch each instruction.' };
@@ -204,7 +275,28 @@ function Playground({ profile, session, updateProfile, onProgramRun, onContinueL
     setStep((value) => Math.min(Math.max(-1, value + amount), trace.steps.length - 1));
   };
   const changeCode = (nextCode) => { setCode(nextCode); setTrace({ steps: [], error: null }); setRunOutput(null); setStep(-1); setAuto(false); };
-  return <main className="page playground-page"><div className="playground-heading"><div><p className="eyebrow">{inLessonFlow ? 'Lesson step 3 of 4' : 'A real learning sandbox'}</p><h1>Code playground</h1><p className="playground-note">Run gives the finished result. The tracer uses the exact same execution steps.</p></div><div className="language-switch" role="group" aria-label="Choose language"><button className={language === 'python' ? 'active' : ''} onClick={() => chooseLanguage('python')}>Python</button><button className={language === 'pseudo' ? 'active' : ''} onClick={() => chooseLanguage('pseudo')}>Pseudocode</button><button className={language === 'cpp' ? 'active' : ''} onClick={() => chooseLanguage('cpp')}>C++</button></div></div><div className="level-switch" role="group" aria-label="Choose learning level">{levelOptions.map(([id, label]) => <button key={id} className={profile.level === id ? 'active' : ''} onClick={() => chooseLevel(id)}>{label}</button>)}</div><section className="playground-grid"><div className="editor-panel"><div className="panel-head"><span>{profile.level} starter program</span><button className="run-button" onClick={run}>Run program</button></div><div className="editor-wrap"><div className="line-numbers">{code.split('\n').map((_, index) => <span className={current.line === index + 1 ? 'current-line' : ''} key={index}>{index + 1}</span>)}</div><textarea aria-label="Code editor" value={code} spellCheck="false" onChange={(event) => changeCode(event.target.value)} /></div>{trace.error && <div className="gentle-error">Let's trace it together: {trace.error}</div>}<div className="output"><span>{runOutput ? 'Run result' : 'Output'}</span><code>{runOutput ? runOutput.length ? runOutput.join('\n') : 'This program finished without displaying a value.' : 'Run the program to see its result.'}</code></div></div><Tracer trace={trace} current={current} step={step} onMove={move} auto={auto} setAuto={setAuto} /></section><section className={`playground-flow ${inLessonFlow ? 'in-flow' : ''}`}>{inLessonFlow && !session.playgroundComplete && <><p className="eyebrow">Your next move</p><h2>Run your program to unlock the next lesson step.</h2><p>When the run result appears, you can continue to the challenge. The tracer is there to help you understand the result.</p></>}{inLessonFlow && session.playgroundComplete && <><p className="eyebrow">Step 3 complete</p><h2>Your program ran successfully.</h2><p>You can keep experimenting, or continue to the final challenge whenever you are ready.</p><button className="primary" onClick={onContinueLesson}>Continue to challenge</button></>}{!inLessonFlow && sessionInProgress && <><p className="eyebrow">Lesson in progress</p><h2>Your guided session is waiting.</h2><p>Return to the lesson to continue from step {session.lessonStep + 1} of 4.</p><button className="secondary" onClick={onReturnToLesson}>Return to lesson</button></>}{!inLessonFlow && !sessionInProgress && <><p className="eyebrow">Free practice</p><h2>Explore at your own pace.</h2><p>Start a lesson when you want the timer, step-by-step guidance, and a clear finish.</p><button className="secondary" onClick={onStartLesson}>Start today&apos;s lesson</button></>}</section><ConfusionBox profile={profile} context="program" /></main>;
+  const handleEditorKeyDown = (event) => {
+    if (event.key !== 'Tab') return;
+    event.preventDefault();
+    const editor = event.currentTarget;
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const indentation = '  ';
+    if (event.shiftKey && code.slice(Math.max(0, start - indentation.length), start) === indentation) {
+      changeCode(`${code.slice(0, start - indentation.length)}${code.slice(start)}`);
+      requestAnimationFrame(() => { editor.selectionStart = start - indentation.length; editor.selectionEnd = Math.max(start - indentation.length, end - indentation.length); });
+      return;
+    }
+    changeCode(`${code.slice(0, start)}${indentation}${code.slice(start)}`);
+    requestAnimationFrame(() => { editor.selectionStart = start + indentation.length; editor.selectionEnd = end + indentation.length; });
+  };
+  return <main className="page playground-page">
+    <div className="playground-heading"><div><p className="eyebrow">{inLessonFlow ? `Unit ${session.lessonIndex + 1}, lesson step 3 of 4` : 'A real learning sandbox'}</p><h1>Code playground</h1><p className="playground-note">Run gives the finished result. The tracer uses the exact same execution steps.</p></div><div className="language-switch" role="group" aria-label="Choose language"><button className={language === 'python' ? 'active' : ''} onClick={() => chooseLanguage('python')}>Python</button><button className={language === 'pseudo' ? 'active' : ''} onClick={() => chooseLanguage('pseudo')}>Pseudocode</button><button className={language === 'cpp' ? 'active' : ''} onClick={() => chooseLanguage('cpp')}>C++</button></div></div>
+    <div className="level-switch" role="group" aria-label="Choose learning level">{levelOptions.map(([id, label]) => <button key={id} className={profile.level === id ? 'active' : ''} onClick={() => chooseLevel(id)}>{label}</button>)}</div>
+    <section className="playground-grid"><div className="editor-panel"><div className="panel-head"><span>{unit.title} - {profile.level} starter</span><button className="run-button" onClick={run}>Run program</button></div><div className="editor-wrap"><div className="line-numbers">{code.split('\n').map((_, index) => <span className={current.line === index + 1 ? 'current-line' : ''} key={index}>{index + 1}</span>)}</div><textarea aria-label="Code editor" value={code} spellCheck="false" onChange={(event) => changeCode(event.target.value)} onKeyDown={handleEditorKeyDown} /></div>{trace.error && <div className="gentle-error">Let's trace it together: {trace.error}</div>}<div className="output"><span>{runOutput ? 'Run result' : 'Output'}</span><code>{runOutput ? runOutput.length ? runOutput.join('\n') : 'This program finished without displaying a value.' : 'Run the program to see its result.'}</code></div></div><Tracer trace={trace} current={current} step={step} onMove={move} auto={auto} setAuto={setAuto} /></section>
+    <section className={`playground-flow ${inLessonFlow ? 'in-flow' : ''}`}>{inLessonFlow && !session.playgroundComplete && <><p className="eyebrow">Your next move</p><h2>Run your program to unlock the next lesson step.</h2><p>{unit.playgroundPrompt} When the run result appears, you can continue to the challenge.</p></>}{inLessonFlow && session.playgroundComplete && <><p className="eyebrow">Step 3 complete</p><h2>Your program ran successfully.</h2><p>You can keep experimenting, or continue to the final challenge whenever you are ready.</p><button className="primary" onClick={onContinueLesson}>Continue to challenge</button></>}{!inLessonFlow && sessionInProgress && <><p className="eyebrow">Lesson in progress</p><h2>Your guided session is waiting.</h2><p>Return to the lesson to continue from step {session.lessonStep + 1} of 4.</p><button className="secondary" onClick={onReturnToLesson}>Return to lesson</button></>}{!inLessonFlow && !sessionInProgress && <><p className="eyebrow">Free practice</p><h2>Explore at your own pace.</h2><p>Start a lesson when you want the timer, step-by-step guidance, and a clear finish.</p><button className="secondary" onClick={onStartLesson}>Start this lesson</button></>}</section>
+    <ConfusionBox profile={profile} context="program" />
+  </main>;
 }
 
 function Tracer({ trace, current, step, onMove, auto, setAuto }) {
@@ -227,7 +319,7 @@ function Settings({ profile, updateProfile, close, onReset }) {
   return <div className="modal-backdrop" role="presentation"><section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-head"><div><p className="eyebrow">Always under your control</p><h2 id="settings-title">My Settings</h2></div><button className="icon-button" onClick={close}>Close</button></div><div className="settings-list"><label><span>Name</span><input className="settings-input" value={profile.name} onChange={(event) => updateProfile({ name: event.target.value })} aria-label="Name" /></label><label><span>Learning level</span><select value={profile.level} onChange={(event) => updateProfile({ level: event.target.value })}>{levelOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label><span>Color theme</span><select value={profile.theme} onChange={(event) => updateProfile({ theme: event.target.value })}><option value="ocean">Calm ocean</option><option value="space">Night space</option><option value="pastel">Soft pastel</option><option value="contrast">High contrast</option><option value="arcade">Retro arcade</option></select></label><label><span>Learning pathway</span><select value={profile.pathway || derivePathway(profile.learningNotes)} onChange={(event) => updateProfile({ pathway: event.target.value })}><option value="blended">Blended</option><option value="autism">Structured</option><option value="adhd">Momentum</option><option value="dyslexia">Readable</option><option value="dyscalculia">Concrete</option></select></label><label className="toggle-row"><span>Dark mode</span><input type="checkbox" checked={profile.darkMode} onChange={(event) => updateProfile({ darkMode: event.target.checked })} /></label><label><span>Reading style</span><select value={profile.font} onChange={(event) => updateProfile({ font: event.target.value })}><option value="standard">Standard</option><option value="lexend">Easy-reading</option></select></label><label><span>Text size</span><input type="range" min="90" max="125" value={profile.fontSize} onChange={(event) => updateProfile({ fontSize: event.target.value })} /></label><label className="toggle-row"><span>Plain, literal explanations</span><input type="checkbox" checked={profile.plainMode} onChange={(event) => updateProfile({ plainMode: event.target.checked })} /></label><label className="toggle-row"><span>Gentle sound feedback</span><input type="checkbox" checked={profile.sound} onChange={(event) => updateProfile({ sound: event.target.checked })} /></label><div className="reset-section"><p><b>Start fresh</b><br />Resetting clears your answers and brings you back to the welcome flow.</p>{confirmingReset ? <div className="reset-actions"><button className="danger-button" onClick={onReset}>Reset my answers</button><button className="text-button" onClick={() => setConfirmingReset(false)}>Keep my answers</button></div> : <button className="secondary" onClick={() => setConfirmingReset(true)}>Reset onboarding answers</button>}</div></div></section></div>;
 }
 
-function LearningMap({ profile, setScreen }) { const units = ['Programs', 'Variables', 'Input / output', 'Conditions', 'Loops', 'Functions', 'Lists', 'Debugging']; return <main className="page map-page"><p className="eyebrow">Coding path - {profile.level}</p><h1>Your learning map</h1><p className="map-intro">The whole path is visible. You are right here, and you can explore in your own order.</p><div className="map-road">{units.map((unit, index) => <button onClick={() => index === 0 && setScreen('lesson')} className={`map-node ${index === 0 ? 'current' : ''}`} key={unit}><span>{index + 1}</span><strong>{unit}</strong><small>{index === 0 ? 'Start here' : 'Coming up'}</small></button>)}</div></main>; }
+function LearningMap({ profile, session, onSelectLesson }) { return <main className="page map-page"><p className="eyebrow">Coding path - {profile.level}</p><h1>Your learning map</h1><p className="map-intro">Every lesson is here. Choose a unit to begin, revisit, or keep moving forward.</p><div className="map-road">{courseLessons.map((unit, index) => { const completed = session.completedLessonIndexes.includes(index); const current = index === session.lessonIndex && !session.completed; return <button onClick={() => onSelectLesson(index)} className={`map-node ${current ? 'current' : ''} ${completed ? 'complete' : ''}`} key={unit.title}><span>{completed ? 'Done' : index + 1}</span><strong>{unit.title}</strong><small>{completed ? 'Completed - revisit' : current ? 'Current lesson' : 'Start this lesson'}</small></button>; })}</div></main>; }
 
 function getAnalogy(profile, concept) { if (profile.plainMode) return analogies.plain[concept]; return (analogies[profile.interests[0]] || analogies.plain)[concept]; }
 
