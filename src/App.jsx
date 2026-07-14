@@ -6,7 +6,7 @@ const defaultProfile = {
   name: '', learningNotes: [], interests: ['space'], learningStyle: 'try', focusLength: '10', motion: 'some',
   feedback: 'trace', track: 'coding', theme: 'ocean', font: 'standard', fontSize: 100, level: 'beginner',
   pathway: 'blended', readingPreference: 'standard', codingExperience: 'never', plainMode: false, sound: false,
-  darkMode: false, xp: 120, streak: 3,
+  darkMode: false, xp: 120, streak: 3, gedState: 'washington', gedTest: 'ged',
 };
 
 const defaultSession = {
@@ -67,6 +67,83 @@ const courseLessons = [
   },
 ];
 
+const gedStates = {
+  washington: {
+    label: 'Washington',
+    credential: 'GED',
+    defaultTest: 'ged',
+    overview: 'Washington awards its High School Equivalency Certificate through the four-subject GED test.',
+    eligibility: ['Age 19 or older: test without additional underage paperwork.', 'Age 16 to 18: the test center must approve required school-status documentation before scheduling.', 'Washington residency is required to receive the state certificate.'],
+    testing: ['You may test at an official center or online when eligible.', 'For online testing, pass GED Ready with a Green score for each subject within 60 days, then schedule within that window.', 'A GED class is helpful but not required before testing.'],
+    sources: [
+      { label: 'Washington GED rules', href: 'https://www.ged.com/policies/washington.html' },
+      { label: 'GED Ready practice test', href: 'https://www.ged.com/en/faqs/about-the-ged.html' },
+      { label: 'GED online testing rules', href: 'https://www.ged.com/content/websites/ged/en-us/take-the-ged-test-online.html' },
+    ],
+  },
+  louisiana: {
+    label: 'Louisiana',
+    credential: 'High School Equivalency (HSE)',
+    defaultTest: 'ged',
+    overview: 'Louisiana accepts both the GED and HiSET as High School Equivalency testing pathways.',
+    eligibility: ['Age 19 or older and not enrolled in high school: eligible to test without additional documentation.', 'Age 16 to 18: an approved age waiver or authorized Adult Education or Options pathway is required.', 'Free Adult Education programs can provide classes, assessment, and help choosing the right path.'],
+    testing: ['GED: four computer-based subjects: Math, Language Arts, Science, and Social Studies.', 'HiSET: five subjects: Reading, Writing, Math, Science, and Social Studies; computer and paper options may be available.', 'Louisiana also has qualifying college-placement and coursework HSE pathways.'],
+    sources: [
+      { label: 'Louisiana HSE testing pathways', href: 'https://www.lctcs.edu/workready-u/high-school-equivalency' },
+      { label: 'Louisiana HSE FAQ and score rules', href: 'https://www.lctcs.edu/workready-u/hse-approved' },
+      { label: 'Louisiana HiSET requirements', href: 'https://hiset.org/louisiana/' },
+    ],
+  },
+};
+
+const gedPlanWeeks = [
+  {
+    title: 'Set your starting point',
+    focus: 'Know the test, your state rules, and the subjects that need the most attention.',
+    tasks: ['Read your state testing rules and save the official link.', 'Create or locate your official testing account.', 'Take one official-style practice section or a short diagnostic in each subject.', 'Write down your strongest subject, your hardest subject, and a realistic study time.'],
+  },
+  {
+    title: 'Reading and language arts',
+    focus: 'Build the reading, evidence, and writing habits used across the exam.',
+    tasks: ['Read two short nonfiction passages and identify each author\'s main claim.', 'Practice finding the sentence that best supports an answer.', 'Review grammar in context: complete sentences, punctuation, and word choice.', 'Write one 45-minute response: claim, evidence, explanation, and a clear ending.'],
+  },
+  {
+    title: 'Core math skills',
+    focus: 'Make number sense, fractions, ratios, and percent feel dependable.',
+    tasks: ['Practice operations with fractions, decimals, and signed numbers.', 'Solve ratio, rate, percent, and proportion problems from everyday situations.', 'Review exponents, square roots, and order of operations.', 'Complete a timed mixed-skills set, then correct every missed problem.'],
+  },
+  {
+    title: 'Algebra, geometry, and data',
+    focus: 'Use equations, shapes, and data displays to reason through multi-step problems.',
+    tasks: ['Solve one-step and multi-step linear equations.', 'Practice graphing a line and interpreting slope and intercept.', 'Review area, volume, the Pythagorean theorem, and coordinate geometry.', 'Read tables, charts, mean, median, range, and simple probability.'],
+  },
+  {
+    title: 'Science reasoning',
+    focus: 'Use evidence, experiments, and data instead of memorizing every fact.',
+    tasks: ['Read a science passage and separate the claim, evidence, and conclusion.', 'Interpret a graph, table, or experiment setup.', 'Review life science, physical science, and Earth and space science vocabulary in context.', 'Practice deciding which result would support or weaken a hypothesis.'],
+  },
+  {
+    title: 'Social studies reasoning',
+    focus: 'Read sources closely and connect civics, history, economics, and geography.',
+    tasks: ['Review the branches of government and basic constitutional principles.', 'Compare two short historical or civic sources.', 'Interpret a map, timeline, political cartoon, or economic chart.', 'Practice selecting evidence that supports a historical or civic claim.'],
+  },
+  {
+    title: 'Practice and target gaps',
+    focus: 'Use practice results to spend time where it pays off most.',
+    tasks: ['Take an official practice test in your lowest-confidence subject.', 'Make an error log: concept, why the answer was wrong, and the corrected method.', 'Complete two focused study blocks from the error log.', 'Practice pacing: skip, flag, and return instead of getting stuck.'],
+  },
+  {
+    title: 'Final readiness and scheduling',
+    focus: 'Confirm readiness, test logistics, and a calm plan for test day.',
+    tasks: ['Take a final official practice test for each subject you plan to schedule.', 'Review your state\'s ID, location, online-testing, and check-in requirements.', 'Choose one subject to take first and schedule only when practice results support it.', 'Plan the day before: sleep, transport or workspace, snacks, and a simple arrival checklist.'],
+  },
+];
+
+const gedTestDetails = {
+  ged: { label: 'GED', subjects: ['Mathematical Reasoning', 'Reasoning Through Language Arts', 'Science', 'Social Studies'], readiness: 'Aim for 145 or higher on each official GED subject test. A GED Ready Green score is required for online scheduling.' },
+  hiset: { label: 'HiSET', subjects: ['Mathematics', 'Reading', 'Writing', 'Science', 'Social Studies'], readiness: 'Louisiana requires an overall score of 45, at least 8 on every subtest, and 2 or higher on the Writing essay.' },
+};
+
 function derivePathway(notes = []) {
   const selected = notes.filter((note) => ['autism', 'adhd', 'dyslexia', 'dyscalculia'].includes(note));
   return notes.includes('none') || notes.includes('private') || notes.includes('multiple') || selected.length !== 1 ? 'blended' : selected[0];
@@ -88,6 +165,10 @@ function loadSession() {
   try { return { ...defaultSession, ...JSON.parse(localStorage.getItem('versed-session')) }; } catch { return defaultSession; }
 }
 
+function loadGedProgress() {
+  try { return JSON.parse(localStorage.getItem('versed-ged-progress')) || {}; } catch { return {}; }
+}
+
 function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = String(seconds % 60).padStart(2, '0');
@@ -106,12 +187,14 @@ function hasStartedSession(session) {
 function App() {
   const [profile, setProfile] = useState(loadProfile);
   const [session, setSession] = useState(loadSession);
+  const [gedProgress, setGedProgress] = useState(loadGedProgress);
   const [screen, setScreen] = useState(() => localStorage.getItem('versed-welcomed') ? 'home' : 'onboarding');
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => { localStorage.setItem('versed-profile', JSON.stringify(profile)); }, [profile]);
   useEffect(() => { localStorage.setItem('versed-session', JSON.stringify(session)); }, [session]);
+  useEffect(() => { localStorage.setItem('versed-ged-progress', JSON.stringify(gedProgress)); }, [gedProgress]);
   useEffect(() => {
     if (!session.timerRunning) return undefined;
     const timer = setInterval(() => setSession((current) => ({ ...current, elapsedSeconds: current.elapsedSeconds + 1 })), 1000);
@@ -135,6 +218,9 @@ function App() {
     setScreen('lesson');
   };
   const setSessionDuration = (durationMinutes) => setSession((current) => ({ ...current, durationMinutes }));
+  const chooseGedState = (gedState) => updateProfile({ gedState, gedTest: gedState === 'washington' ? 'ged' : profile.gedTest || 'ged' });
+  const chooseGedTest = (gedTest) => updateProfile({ gedTest });
+  const toggleGedTask = (taskId) => setGedProgress((current) => ({ ...current, [taskId]: !current[taskId] }));
   const toggleTimer = () => setSession((current) => ({ ...current, timerRunning: !current.timerRunning }));
   const openPlayground = () => {
     setSession((current) => ({ ...current, lessonStep: 2 }));
@@ -157,6 +243,7 @@ function App() {
   const resetProfile = () => {
     localStorage.removeItem('versed-profile');
     localStorage.removeItem('versed-session');
+    localStorage.removeItem('versed-ged-progress');
     localStorage.removeItem('versed-welcomed');
     setProfile({ ...defaultProfile });
     setSession({ ...defaultSession });
@@ -171,10 +258,11 @@ function App() {
 
   return <div className={`app theme-${profile.theme} font-${profile.font} ${profile.darkMode ? 'dark-mode' : ''}`} style={{ '--font-scale': `${profile.fontSize}%` }}>
     <Header profile={profile} setScreen={setScreen} onSettings={() => setSettingsOpen(true)} onToggleDarkMode={() => updateProfile({ darkMode: !profile.darkMode })} />
-    {screen === 'home' && <Dashboard profile={profile} session={session} updateProfile={updateProfile} onStartLesson={startLesson} onToggleTimer={toggleTimer} onSetSessionDuration={setSessionDuration} />}
+    {screen === 'home' && <Dashboard profile={profile} session={session} updateProfile={updateProfile} onStartLesson={startLesson} onToggleTimer={toggleTimer} onSetSessionDuration={setSessionDuration} onOpenGed={() => setScreen('ged')} />}
     {screen === 'lesson' && <Lesson profile={profile} session={session} setLessonStep={setLessonStep} setScreen={setScreen} onOpenPlayground={openPlayground} onFinishLesson={finishLesson} onToggleTimer={toggleTimer} />}
     {screen === 'playground' && <Playground profile={profile} session={session} updateProfile={updateProfile} onProgramRun={markProgramRun} onContinueLesson={continueFromPlayground} onReturnToLesson={() => setScreen('lesson')} onStartLesson={startLesson} />}
     {screen === 'map' && <LearningMap profile={profile} session={session} onSelectLesson={selectLesson} />}
+    {screen === 'ged' && <GedPlan profile={profile} progress={gedProgress} onChooseState={chooseGedState} onChooseTest={chooseGedTest} onToggleTask={toggleGedTask} />}
     {settingsOpen && <Settings profile={profile} updateProfile={updateProfile} close={() => setSettingsOpen(false)} onReset={resetProfile} />}
   </div>;
 }
@@ -182,7 +270,7 @@ function App() {
 function Header({ profile, setScreen, onSettings, onToggleDarkMode }) {
   return <header className="topbar">
     <button className="brand" onClick={() => setScreen('home')} aria-label="Versed home"><span className="brand-mark">V</span><span>versed</span></button>
-    <nav aria-label="Main navigation"><button onClick={() => setScreen('home')}>Today</button><button onClick={() => setScreen('map')}>Learning map</button><button onClick={() => setScreen('playground')}>Playground</button></nav>
+    <nav aria-label="Main navigation"><button onClick={() => setScreen('home')}>Today</button><button onClick={() => setScreen('ged')}>GED plan</button><button onClick={() => setScreen('map')}>Coding map</button><button onClick={() => setScreen('playground')}>Playground</button></nav>
     <div className="status"><span className="streak" title="Your current learning streak">{profile.streak} day streak</span><span className="xp">{profile.xp} XP</span><button className="mode-toggle" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed={profile.darkMode} onClick={onToggleDarkMode}><span className="mode-indicator" aria-hidden="true" /><span>{profile.darkMode ? 'Dark' : 'Light'}</span></button><button className="icon-button" title="Open My Settings" onClick={onSettings} aria-label="Open My Settings">Settings</button></div>
   </header>;
 }
@@ -213,7 +301,7 @@ function Onboarding({ profile, updateProfile, step, setStep, onFinish }) {
 
 function Choice({ label, selected, onClick, className = '' }) { return <button className={`choice ${selected ? 'selected' : ''} ${className}`} onClick={onClick}><span>{label}</span>{selected && <b>Selected</b>}</button>; }
 
-function Dashboard({ profile, session, updateProfile, onStartLesson, onToggleTimer, onSetSessionDuration }) {
+function Dashboard({ profile, session, updateProfile, onStartLesson, onToggleTimer, onSetSessionDuration, onOpenGed }) {
   const subject = profile.track === 'math' ? 'Math' : 'Coding';
   const pathway = profile.pathway || derivePathway(profile.learningNotes);
   const greeting = profile.name ? `, ${profile.name}` : '';
@@ -232,6 +320,7 @@ function Dashboard({ profile, session, updateProfile, onStartLesson, onToggleTim
     <section className="agenda"><div className="section-heading"><div><p className="eyebrow">A clear path</p><h2>Today&apos;s plan</h2></div><span className="duration">{session.completed ? 'Completed' : `Step ${currentStep + 1} of 4`}</span></div><div className="agenda-steps">{lessonSteps.map((item, index) => <div className={`agenda-item ${session.completed || index < session.lessonStep ? 'done' : ''} ${!session.completed && index === session.lessonStep ? 'active' : ''}`} key={item}><span>{session.completed || index < session.lessonStep ? 'Done' : index + 1}</span><div><strong>{item}</strong><small>{['See instructions become a program', 'Meet variables', 'Run and trace your code', 'Make a score counter'][index]}</small></div></div>)}</div></section>
     <section className="level-section"><div className="section-heading"><div><p className="eyebrow">Choose your challenge</p><h2>Learning levels</h2></div><span className="duration">Current: {profile.level}</span></div><div className="level-grid">{levelOptions.map(([id, label, description]) => <button key={id} className={`level-card ${profile.level === id ? 'active' : ''}`} onClick={() => updateProfile({ level: id })}><span>{label}</span><small>{description}</small>{profile.level === id && <b>Selected</b>}</button>)}</div></section>
     <section className="two-column"><div className="lesson-card"><p className="eyebrow">Coding path - Unit {session.lessonIndex + 1} of {courseLessons.length}</p><h2>{session.completed ? completionMessage : unit.title}</h2><p>{session.completed ? nextUnit ? nextUnit.summary : 'Every unit is available from your learning map whenever you want to revisit an idea.' : unit.summary}</p><button className="primary" onClick={onStartLesson}>{mainAction}</button></div><div className="progress-card"><p className="eyebrow">Your momentum</p><div className="progress-number"><strong>{session.completed ? 4 : currentStep + 1}</strong><span>{session.completed ? 'lesson complete' : 'of 4 lesson steps'}</span></div><div className="badge-row"><span>{session.timerRunning ? 'Timer running' : 'Progress saved'}</span><span>{session.completedLessonIndexes.length} of {courseLessons.length} units complete</span></div></div></section>
+    <section className="ged-spotlight"><div><p className="eyebrow">High school equivalency</p><h2>Your GED study plan is ready.</h2><p>Use a state-aware eight-week path for {gedStates[profile.gedState]?.label || 'Washington'}, with a checklist and official testing links.</p></div><button className="secondary" onClick={onOpenGed}>Open GED plan</button></section>
   </main>;
 }
 
@@ -317,6 +406,34 @@ function ConfusionBox({ profile, context = 'variables' }) {
 function Settings({ profile, updateProfile, close, onReset }) {
   const [confirmingReset, setConfirmingReset] = useState(false);
   return <div className="modal-backdrop" role="presentation"><section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-head"><div><p className="eyebrow">Always under your control</p><h2 id="settings-title">My Settings</h2></div><button className="icon-button" onClick={close}>Close</button></div><div className="settings-list"><label><span>Name</span><input className="settings-input" value={profile.name} onChange={(event) => updateProfile({ name: event.target.value })} aria-label="Name" /></label><label><span>Learning level</span><select value={profile.level} onChange={(event) => updateProfile({ level: event.target.value })}>{levelOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label><span>Color theme</span><select value={profile.theme} onChange={(event) => updateProfile({ theme: event.target.value })}><option value="ocean">Calm ocean</option><option value="space">Night space</option><option value="pastel">Soft pastel</option><option value="contrast">High contrast</option><option value="arcade">Retro arcade</option></select></label><label><span>Learning pathway</span><select value={profile.pathway || derivePathway(profile.learningNotes)} onChange={(event) => updateProfile({ pathway: event.target.value })}><option value="blended">Blended</option><option value="autism">Structured</option><option value="adhd">Momentum</option><option value="dyslexia">Readable</option><option value="dyscalculia">Concrete</option></select></label><label className="toggle-row"><span>Dark mode</span><input type="checkbox" checked={profile.darkMode} onChange={(event) => updateProfile({ darkMode: event.target.checked })} /></label><label><span>Reading style</span><select value={profile.font} onChange={(event) => updateProfile({ font: event.target.value })}><option value="standard">Standard</option><option value="lexend">Easy-reading</option></select></label><label><span>Text size</span><input type="range" min="90" max="125" value={profile.fontSize} onChange={(event) => updateProfile({ fontSize: event.target.value })} /></label><label className="toggle-row"><span>Plain, literal explanations</span><input type="checkbox" checked={profile.plainMode} onChange={(event) => updateProfile({ plainMode: event.target.checked })} /></label><label className="toggle-row"><span>Gentle sound feedback</span><input type="checkbox" checked={profile.sound} onChange={(event) => updateProfile({ sound: event.target.checked })} /></label><div className="reset-section"><p><b>Start fresh</b><br />Resetting clears your answers and brings you back to the welcome flow.</p>{confirmingReset ? <div className="reset-actions"><button className="danger-button" onClick={onReset}>Reset my answers</button><button className="text-button" onClick={() => setConfirmingReset(false)}>Keep my answers</button></div> : <button className="secondary" onClick={() => setConfirmingReset(true)}>Reset onboarding answers</button>}</div></div></section></div>;
+}
+
+function GedPlan({ profile, progress, onChooseState, onChooseTest, onToggleTask }) {
+  const stateId = gedStates[profile.gedState] ? profile.gedState : 'washington';
+  const state = gedStates[stateId];
+  const testKey = stateId === 'washington' ? 'ged' : profile.gedTest === 'hiset' ? 'hiset' : 'ged';
+  const test = gedTestDetails[testKey];
+  const taskIds = gedPlanWeeks.flatMap((week, weekIndex) => week.tasks.map((_, taskIndex) => `${stateId}-${testKey}-${weekIndex}-${taskIndex}`));
+  const completedCount = taskIds.filter((taskId) => progress[taskId]).length;
+  const progressPercent = Math.round(completedCount / taskIds.length * 100);
+  const stateControls = Object.entries(gedStates);
+
+  return <main className="page ged-page">
+    <section className="ged-hero">
+      <div><p className="eyebrow">High school equivalency</p><h1>{state.label} {test.label} study plan</h1><p>A complete eight-week path built around the subjects, practice, and test-day decisions that matter. Check off work as you go; your progress stays saved here.</p></div>
+      <div className="ged-progress" aria-label={`${progressPercent}% of this GED plan complete`}><span>Plan progress</span><strong>{progressPercent}%</strong><div className="meter"><i style={{ width: `${progressPercent}%` }} /></div><small>{completedCount} of {taskIds.length} study tasks complete</small></div>
+    </section>
+
+    <section className="ged-controls" aria-label="GED plan choices"><div><span>State</span><div className="segmented-control">{stateControls.map(([id, item]) => <button key={id} className={stateId === id ? 'active' : ''} onClick={() => onChooseState(id)}>{item.label}</button>)}</div></div>{stateId === 'louisiana' && <div><span>Testing route</span><div className="segmented-control">{['ged', 'hiset'].map((id) => <button key={id} className={testKey === id ? 'active' : ''} onClick={() => onChooseTest(id)}>{gedTestDetails[id].label}</button>)}</div></div>}<p>Rules can change. Confirm the official state requirements before paying or scheduling.</p></section>
+
+    <section className="ged-overview-grid"><article className="ged-info-card"><p className="eyebrow">Your test route</p><h2>{test.label} subjects</h2><ul>{test.subjects.map((subject) => <li key={subject}>{subject}</li>)}</ul><p className="readiness-note">{test.readiness}</p></article><article className="ged-info-card"><p className="eyebrow">Start here</p><h2>{state.credential} in {state.label}</h2><p>{state.overview}</p><div className="state-facts"><span>{test.subjects.length} subjects</span><span>8-week plan</span><span>Saved checklist</span></div></article></section>
+
+    <section className="study-plan"><div className="section-heading"><div><p className="eyebrow">Your study route</p><h2>Eight weeks to ready</h2></div><span className="duration">Study 4 to 5 days each week</span></div><div className="week-grid">{gedPlanWeeks.map((week, weekIndex) => { const weekTaskIds = week.tasks.map((_, taskIndex) => `${stateId}-${testKey}-${weekIndex}-${taskIndex}`); const done = weekTaskIds.filter((taskId) => progress[taskId]).length; return <article className={`week-card ${done === week.tasks.length ? 'complete' : ''}`} key={week.title}><div className="week-head"><span>Week {weekIndex + 1}</span><small>{done} / {week.tasks.length} done</small></div><h3>{week.title}</h3><p>{week.focus}</p><div className="task-list">{week.tasks.map((task, taskIndex) => { const taskId = `${stateId}-${testKey}-${weekIndex}-${taskIndex}`; return <label key={taskId}><input type="checkbox" checked={Boolean(progress[taskId])} onChange={() => onToggleTask(taskId)} /><span>{task}</span></label>; })}</div></article>; })}</div></section>
+
+    <section className="state-guidance"><div className="guidance-card"><p className="eyebrow">Eligibility and paperwork</p><h2>Check before you schedule</h2><ul>{state.eligibility.map((item) => <li key={item}>{item}</li>)}</ul></div><div className="guidance-card"><p className="eyebrow">Testing options</p><h2>Know your route</h2><ul>{state.testing.map((item) => <li key={item}>{item}</li>)}</ul></div></section>
+
+    <section className="official-resources"><div><p className="eyebrow">Official next steps</p><h2>Use the source, not a guess.</h2><p>These links are the places to verify current rules, practice, and schedule your test.</p></div><div className="resource-links">{state.sources.map((source) => <a key={source.href} href={source.href} target="_blank" rel="noreferrer">{source.label}<span aria-hidden="true">Open</span></a>)}</div></section>
+  </main>;
 }
 
 function LearningMap({ profile, session, onSelectLesson }) { return <main className="page map-page"><p className="eyebrow">Coding path - {profile.level}</p><h1>Your learning map</h1><p className="map-intro">Every lesson is here. Choose a unit to begin, revisit, or keep moving forward.</p><div className="map-road">{courseLessons.map((unit, index) => { const completed = session.completedLessonIndexes.includes(index); const current = index === session.lessonIndex && !session.completed; return <button onClick={() => onSelectLesson(index)} className={`map-node ${current ? 'current' : ''} ${completed ? 'complete' : ''}`} key={unit.title}><span>{completed ? 'Done' : index + 1}</span><strong>{unit.title}</strong><small>{completed ? 'Completed - revisit' : current ? 'Current lesson' : 'Start this lesson'}</small></button>; })}</div></main>; }
