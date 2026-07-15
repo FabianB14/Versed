@@ -7,6 +7,7 @@ const defaultProfile = {
   feedback: 'trace', track: 'coding', theme: 'ocean', font: 'standard', fontSize: 100, level: 'beginner',
   pathway: 'blended', readingPreference: 'standard', codingExperience: 'never', plainMode: false, sound: false,
   darkMode: false, xp: 120, streak: 3, gedState: 'washington', gedTest: 'ged',
+  gedStudySettings: { daysPerWeek: 4, confidence: { math: 'some', language: 'some', science: 'some', social: 'some', writing: 'some' } },
 };
 
 const defaultSession = {
@@ -144,6 +145,129 @@ const gedTestDetails = {
   hiset: { label: 'HiSET', subjects: ['Mathematics', 'Reading', 'Writing', 'Science', 'Social Studies'], readiness: 'Louisiana requires an overall score of 45, at least 8 on every subtest, and 2 or higher on the Writing essay.' },
 };
 
+const gedSubjectLabels = { math: 'Math', language: 'Language arts', writing: 'Writing', science: 'Science', social: 'Social studies' };
+const gedSubjectsByTest = { ged: ['math', 'language', 'science', 'social'], hiset: ['math', 'language', 'writing', 'science', 'social'] };
+const confidenceOptions = [['need', 'Need practice'], ['some', 'Some practice'], ['ready', 'Feeling ready']];
+
+const gedStudyModules = [
+  {
+    id: 'math-percent', subject: 'math', title: 'Find a percent of a number', skill: 'Use percent as a rate out of 100.',
+    teach: 'To find 25% of a number, turn 25% into 0.25 and multiply. For $80, 0.25 x 80 = 20.',
+    example: 'A jacket costs $80 and is 25% off. The discount is $20, so the sale price is $60.',
+    question: { prompt: 'A phone case costs $36 and is 25% off. How much is the discount?', choices: ['$6', '$9', '$12', '$27'], answer: '$9', hint: 'One quarter is 25%. Find one quarter of 36.', explanation: '25% is one quarter. 36 divided by 4 is 9, so the discount is $9.' },
+  },
+  {
+    id: 'math-equation', subject: 'math', title: 'Solve a one-variable equation', skill: 'Undo operations in the reverse order.',
+    teach: 'For 3x + 5 = 20, subtract 5 first. Then divide both sides by 3.',
+    example: '3x + 5 = 20 becomes 3x = 15, so x = 5.',
+    question: { prompt: 'Solve: 4x - 7 = 21', choices: ['x = 5', 'x = 7', 'x = 14', 'x = 28'], answer: 'x = 7', hint: 'Add 7 to both sides before dividing by 4.', explanation: 'Adding 7 gives 4x = 28. Dividing both sides by 4 gives x = 7.' },
+  },
+  {
+    id: 'math-data', subject: 'math', title: 'Read the middle of a data set', skill: 'Find the median after putting values in order.',
+    teach: 'The median is the middle value when the numbers are ordered. With an even number of values, average the two middle values.',
+    example: 'For 2, 4, 6, 8, the two middle values are 4 and 6. Their average is 5.',
+    question: { prompt: 'What is the median of 3, 7, 9, 11, 15?', choices: ['7', '8', '9', '11'], answer: '9', hint: 'There are five ordered values. Point to the one in the middle.', explanation: '9 has two values below it and two above it, so it is the median.' },
+  },
+  {
+    id: 'language-claim', subject: 'language', title: 'Find an author\'s claim', skill: 'Separate the main point from supporting details.',
+    teach: 'A claim is the point the author wants you to accept. Evidence and examples support that point.',
+    example: 'If a passage lists the benefits of a new bus route, the claim may be that the route should be added.',
+    question: { prompt: 'A passage says a town should add more library hours because evening hours help working adults use computers and attend job workshops. What is the author\'s claim?', choices: ['Evening library hours should be added.', 'Working adults attend job workshops.', 'Libraries have computers.', 'The town has one library.'], answer: 'Evening library hours should be added.', hint: 'Look for the action the author wants the town to take.', explanation: 'The working-adult and computer details are evidence. The claim is that the town should add evening hours.' },
+  },
+  {
+    id: 'language-evidence', subject: 'language', title: 'Choose strong supporting evidence', skill: 'Match evidence directly to a claim.',
+    teach: 'Strong evidence is specific and directly connected to the claim. A fact or result is usually stronger than an unrelated opinion.',
+    example: 'For a claim about a tutoring program, improved reading scores are stronger evidence than saying the room is bright.',
+    question: { prompt: 'Which detail best supports the claim that a school garden improved science learning?', choices: ['The garden has a blue fence.', 'Students measured plant growth each week and used the data in class.', 'The garden is behind the gym.', 'Teachers like being outside.'], answer: 'Students measured plant growth each week and used the data in class.', hint: 'Pick the detail that connects the garden to science work.', explanation: 'Measuring plant growth and using data are specific science-learning activities.' },
+  },
+  {
+    id: 'language-grammar', subject: 'language', title: 'Fix a sentence boundary', skill: 'Use punctuation to join complete ideas correctly.',
+    teach: 'Two complete sentences need a period, a semicolon, or a comma plus a coordinating word such as and or but.',
+    example: 'Wrong: The bus was late I called work. Correct: The bus was late, so I called work.',
+    question: { prompt: 'Choose the best revision: "The store was closed we returned home."', choices: ['The store was closed, we returned home.', 'The store was closed so we returned home.', 'The store was closed, so we returned home.', 'The store was closed; so, we returned home.'], answer: 'The store was closed, so we returned home.', hint: 'You need a comma and a joining word between two complete ideas.', explanation: 'A comma followed by so correctly joins the two complete ideas.' },
+  },
+  {
+    id: 'writing-support', subject: 'writing', title: 'Build a focused paragraph', skill: 'Choose evidence that directly supports a controlling idea.',
+    teach: 'A focused paragraph makes one point, gives evidence, and explains how the evidence proves that point.',
+    example: 'Claim: Community colleges should offer evening classes. Evidence: Many students work during the day. Explanation: Evening classes make attendance possible for those workers.',
+    question: { prompt: 'Which sentence best supports the claim that a city should repair sidewalks near schools?', choices: ['Many streets have names.', 'Students walk there every morning and broken pavement creates tripping hazards.', 'The city has a parks department.', 'Some sidewalks are painted yellow.'], answer: 'Students walk there every morning and broken pavement creates tripping hazards.', hint: 'Look for a detail about safety and the area near schools.', explanation: 'It directly connects damaged sidewalks to a real safety risk for students.' },
+  },
+  {
+    id: 'writing-revision', subject: 'writing', title: 'Use transitions to show a relationship', skill: 'Choose a transition that matches the idea that follows.',
+    teach: 'Transitions show relationships. Use because for a reason, however for contrast, and therefore for a result.',
+    example: 'The route is shorter; therefore, the delivery will arrive earlier.',
+    question: { prompt: 'Choose the best word: "The test center was full; _____, Maya scheduled for Friday."', choices: ['however', 'therefore', 'for example', 'meanwhile'], answer: 'therefore', hint: 'The Friday appointment is the result of the test center being full.', explanation: 'Therefore shows that scheduling Friday happened because the earlier date was full.' },
+  },
+  {
+    id: 'science-variable', subject: 'science', title: 'Identify an independent variable', skill: 'Notice what a researcher changes on purpose.',
+    teach: 'In an experiment, the independent variable is what the researcher changes. The dependent variable is what they measure.',
+    example: 'If a researcher changes hours of light and measures plant height, light is the independent variable.',
+    question: { prompt: 'A class gives plants 2, 4, or 6 hours of light and measures their height after two weeks. What is the independent variable?', choices: ['Plant height', 'Hours of light', 'The ruler used', 'Two weeks'], answer: 'Hours of light', hint: 'Which thing did the class deliberately change?', explanation: 'The class chose different amounts of light. Plant height was the measured result.' },
+  },
+  {
+    id: 'science-evidence', subject: 'science', title: 'Use data to evaluate a claim', skill: 'Compare a claim with the result of an investigation.',
+    teach: 'A conclusion is supported when the results match what it predicts. One result may support a claim without proving it forever.',
+    example: 'If plants with more light grow taller in repeated trials, that supports the claim that light affects growth.',
+    question: { prompt: 'A test finds that water freezes at the same temperature in three trials. Which conclusion is best supported?', choices: ['Water always freezes instantly.', 'The trials support that water freezes at a consistent temperature.', 'The thermometer was broken.', 'No more trials are needed.'], answer: 'The trials support that water freezes at a consistent temperature.', hint: 'Choose the careful conclusion that matches the repeated result.', explanation: 'Repeated trials support consistency. They do not prove every possible condition or rule out future testing.' },
+  },
+  {
+    id: 'science-model', subject: 'science', title: 'Connect a model to a system', skill: 'Use a simple model to describe a scientific relationship.',
+    teach: 'A model simplifies a system so you can see a relationship. Ask what changes and what stays the same.',
+    example: 'A diagram of the water cycle shows water moving among the ground, air, and clouds.',
+    question: { prompt: 'A diagram shows a battery connected to a bulb. When the switch closes, the bulb lights. What does the diagram best model?', choices: ['A food chain', 'A complete electric circuit', 'The water cycle', 'Cell division'], answer: 'A complete electric circuit', hint: 'Think about what is needed for electricity to flow to a bulb.', explanation: 'Closing the switch completes the path for electric current through the battery and bulb.' },
+  },
+  {
+    id: 'social-civics', subject: 'social', title: 'Match a power to a branch', skill: 'Recognize the jobs of the federal branches.',
+    teach: 'Congress makes laws, the president carries out laws, and federal courts interpret laws.',
+    example: 'When a court decides whether a law follows the Constitution, it is using judicial power.',
+    question: { prompt: 'Which branch of the federal government can declare a law unconstitutional?', choices: ['Congress', 'The executive branch', 'The judicial branch', 'A city council'], answer: 'The judicial branch', hint: 'Think about which branch interprets laws and the Constitution.', explanation: 'Courts make up the judicial branch and can rule that a law conflicts with the Constitution.' },
+  },
+  {
+    id: 'social-source', subject: 'social', title: 'Read a source for its point of view', skill: 'Notice the purpose and perspective behind a source.',
+    teach: 'A source can be useful even when it has a point of view. Ask who created it, why, and what evidence it uses.',
+    example: 'A campaign flyer may reveal what a candidate wants voters to believe, even though it is not neutral.',
+    question: { prompt: 'A business owner writes a letter arguing against a new tax. What is the most likely point of view?', choices: ['The tax will affect the owner\'s business costs.', 'Taxes are never collected.', 'The letter has no purpose.', 'The owner works for the court.'], answer: 'The tax will affect the owner\'s business costs.', hint: 'Consider how the proposed tax could affect the person writing the letter.', explanation: 'The business owner has a clear economic interest in a tax that could raise business costs.' },
+  },
+  {
+    id: 'social-economics', subject: 'social', title: 'See how price affects demand', skill: 'Use a basic supply-and-demand relationship.',
+    teach: 'When a price rises, people often buy less of that item. When a price falls, people often buy more, all else equal.',
+    example: 'If concert tickets cost less, more people may be able to buy them.',
+    question: { prompt: 'A store raises the price of a popular snack. What is the most likely short-term effect on demand?', choices: ['Demand increases because the price is higher.', 'Demand decreases because fewer people may choose to buy it.', 'Demand stays exactly the same in every case.', 'The snack becomes free.'], answer: 'Demand decreases because fewer people may choose to buy it.', hint: 'Think about what a higher price does to a buyer\'s budget.', explanation: 'A higher price usually leads some buyers to purchase less, so demand tends to decrease.' },
+  },
+];
+
+function getGedStudySettings(profile) {
+  const stored = profile.gedStudySettings || {};
+  return { daysPerWeek: Number(stored.daysPerWeek) || 4, confidence: { math: 'some', language: 'some', writing: 'some', science: 'some', social: 'some', ...(stored.confidence || {}) } };
+}
+
+function getStudyStylePrompt(profile) {
+  const prompts = {
+    watch: 'Start with the worked example, then notice the one move that changes the answer.',
+    read: 'Read the key idea slowly, then use it on one focused question.',
+    try: 'Try the question after a quick example. Your answer tells us what comes next.',
+    story: 'Start with the small real-life example, then pull out the test skill inside it.',
+  };
+  return prompts[profile.learningStyle] || prompts.try;
+}
+
+function buildGedStudySessions(stateId, testKey, settings) {
+  const subjects = gedSubjectsByTest[testKey] || gedSubjectsByTest.ged;
+  const priority = [...subjects].sort((left, right) => {
+    const score = { need: 0, some: 1, ready: 2 };
+    return (score[settings.confidence[left]] ?? 1) - (score[settings.confidence[right]] ?? 1);
+  });
+  const modulesBySubject = Object.fromEntries(subjects.map((subject) => [subject, gedStudyModules.filter((module) => module.subject === subject)]));
+  const cycle = [];
+  const rounds = Math.max(...priority.map((subject) => modulesBySubject[subject].length));
+  for (let round = 0; round < rounds; round += 1) priority.forEach((subject) => { const module = modulesBySubject[subject][round]; if (module) cycle.push(module); });
+  const totalSessions = settings.daysPerWeek * 8;
+  return Array.from({ length: totalSessions }, (_, index) => {
+    const module = cycle[index % cycle.length];
+    return { id: `${stateId}-${testKey}-${index + 1}-${module.id}`, moduleId: module.id, week: Math.floor(index / settings.daysPerWeek) + 1, day: index % settings.daysPerWeek + 1, review: index >= cycle.length };
+  });
+}
+
 function derivePathway(notes = []) {
   const selected = notes.filter((note) => ['autism', 'adhd', 'dyslexia', 'dyscalculia'].includes(note));
   return notes.includes('none') || notes.includes('private') || notes.includes('multiple') || selected.length !== 1 ? 'blended' : selected[0];
@@ -169,6 +293,10 @@ function loadGedProgress() {
   try { return JSON.parse(localStorage.getItem('versed-ged-progress')) || {}; } catch { return {}; }
 }
 
+function loadGedStudyProgress() {
+  try { return { completedSessions: {}, results: {}, ...JSON.parse(localStorage.getItem('versed-ged-study-progress')) }; } catch { return { completedSessions: {}, results: {} }; }
+}
+
 function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = String(seconds % 60).padStart(2, '0');
@@ -188,6 +316,8 @@ function App() {
   const [profile, setProfile] = useState(loadProfile);
   const [session, setSession] = useState(loadSession);
   const [gedProgress, setGedProgress] = useState(loadGedProgress);
+  const [gedStudyProgress, setGedStudyProgress] = useState(loadGedStudyProgress);
+  const [activeGedSession, setActiveGedSession] = useState(null);
   const [screen, setScreen] = useState(() => localStorage.getItem('versed-welcomed') ? 'home' : 'onboarding');
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -195,6 +325,7 @@ function App() {
   useEffect(() => { localStorage.setItem('versed-profile', JSON.stringify(profile)); }, [profile]);
   useEffect(() => { localStorage.setItem('versed-session', JSON.stringify(session)); }, [session]);
   useEffect(() => { localStorage.setItem('versed-ged-progress', JSON.stringify(gedProgress)); }, [gedProgress]);
+  useEffect(() => { localStorage.setItem('versed-ged-study-progress', JSON.stringify(gedStudyProgress)); }, [gedStudyProgress]);
   useEffect(() => {
     if (!session.timerRunning) return undefined;
     const timer = setInterval(() => setSession((current) => ({ ...current, elapsedSeconds: current.elapsedSeconds + 1 })), 1000);
@@ -221,6 +352,12 @@ function App() {
   const chooseGedState = (gedState) => updateProfile({ gedState, gedTest: gedState === 'washington' ? 'ged' : profile.gedTest || 'ged' });
   const chooseGedTest = (gedTest) => updateProfile({ gedTest });
   const toggleGedTask = (taskId) => setGedProgress((current) => ({ ...current, [taskId]: !current[taskId] }));
+  const updateGedStudySettings = (patch) => updateProfile({ gedStudySettings: { ...getGedStudySettings(profile), ...patch, confidence: { ...getGedStudySettings(profile).confidence, ...(patch.confidence || {}) } } });
+  const openGedStudy = (studySession) => { setActiveGedSession(studySession); setScreen('ged-study'); };
+  const completeGedStudy = (studySession, module) => {
+    setGedStudyProgress((current) => ({ ...current, completedSessions: { ...current.completedSessions, [studySession.id]: true }, results: { ...current.results, [studySession.id]: { moduleId: module.id, subject: module.subject, completedAt: Date.now() } } }));
+    setScreen('ged');
+  };
   const toggleTimer = () => setSession((current) => ({ ...current, timerRunning: !current.timerRunning }));
   const openPlayground = () => {
     setSession((current) => ({ ...current, lessonStep: 2 }));
@@ -244,6 +381,7 @@ function App() {
     localStorage.removeItem('versed-profile');
     localStorage.removeItem('versed-session');
     localStorage.removeItem('versed-ged-progress');
+    localStorage.removeItem('versed-ged-study-progress');
     localStorage.removeItem('versed-welcomed');
     setProfile({ ...defaultProfile });
     setSession({ ...defaultSession });
@@ -262,7 +400,8 @@ function App() {
     {screen === 'lesson' && <Lesson profile={profile} session={session} setLessonStep={setLessonStep} setScreen={setScreen} onOpenPlayground={openPlayground} onFinishLesson={finishLesson} onToggleTimer={toggleTimer} />}
     {screen === 'playground' && <Playground profile={profile} session={session} updateProfile={updateProfile} onProgramRun={markProgramRun} onContinueLesson={continueFromPlayground} onReturnToLesson={() => setScreen('lesson')} onStartLesson={startLesson} />}
     {screen === 'map' && <LearningMap profile={profile} session={session} onSelectLesson={selectLesson} />}
-    {screen === 'ged' && <GedPlan profile={profile} progress={gedProgress} onChooseState={chooseGedState} onChooseTest={chooseGedTest} onToggleTask={toggleGedTask} />}
+    {screen === 'ged' && <PersonalizedGedPlan profile={profile} studyProgress={gedStudyProgress} onChooseState={chooseGedState} onChooseTest={chooseGedTest} onUpdateStudySettings={updateGedStudySettings} onOpenStudy={openGedStudy} />}
+    {screen === 'ged-study' && activeGedSession && <GedStudy profile={profile} studySession={activeGedSession} onBack={() => setScreen('ged')} onComplete={completeGedStudy} />}
     {settingsOpen && <Settings profile={profile} updateProfile={updateProfile} close={() => setSettingsOpen(false)} onReset={resetProfile} />}
   </div>;
 }
@@ -320,7 +459,7 @@ function Dashboard({ profile, session, updateProfile, onStartLesson, onToggleTim
     <section className="agenda"><div className="section-heading"><div><p className="eyebrow">A clear path</p><h2>Today&apos;s plan</h2></div><span className="duration">{session.completed ? 'Completed' : `Step ${currentStep + 1} of 4`}</span></div><div className="agenda-steps">{lessonSteps.map((item, index) => <div className={`agenda-item ${session.completed || index < session.lessonStep ? 'done' : ''} ${!session.completed && index === session.lessonStep ? 'active' : ''}`} key={item}><span>{session.completed || index < session.lessonStep ? 'Done' : index + 1}</span><div><strong>{item}</strong><small>{['See instructions become a program', 'Meet variables', 'Run and trace your code', 'Make a score counter'][index]}</small></div></div>)}</div></section>
     <section className="level-section"><div className="section-heading"><div><p className="eyebrow">Choose your challenge</p><h2>Learning levels</h2></div><span className="duration">Current: {profile.level}</span></div><div className="level-grid">{levelOptions.map(([id, label, description]) => <button key={id} className={`level-card ${profile.level === id ? 'active' : ''}`} onClick={() => updateProfile({ level: id })}><span>{label}</span><small>{description}</small>{profile.level === id && <b>Selected</b>}</button>)}</div></section>
     <section className="two-column"><div className="lesson-card"><p className="eyebrow">Coding path - Unit {session.lessonIndex + 1} of {courseLessons.length}</p><h2>{session.completed ? completionMessage : unit.title}</h2><p>{session.completed ? nextUnit ? nextUnit.summary : 'Every unit is available from your learning map whenever you want to revisit an idea.' : unit.summary}</p><button className="primary" onClick={onStartLesson}>{mainAction}</button></div><div className="progress-card"><p className="eyebrow">Your momentum</p><div className="progress-number"><strong>{session.completed ? 4 : currentStep + 1}</strong><span>{session.completed ? 'lesson complete' : 'of 4 lesson steps'}</span></div><div className="badge-row"><span>{session.timerRunning ? 'Timer running' : 'Progress saved'}</span><span>{session.completedLessonIndexes.length} of {courseLessons.length} units complete</span></div></div></section>
-    <section className="ged-spotlight"><div><p className="eyebrow">High school equivalency</p><h2>Your GED study plan is ready.</h2><p>Use a state-aware eight-week path for {gedStates[profile.gedState]?.label || 'Washington'}, with a checklist and official testing links.</p></div><button className="secondary" onClick={onOpenGed}>Open GED plan</button></section>
+    <section className="ged-spotlight"><div><p className="eyebrow">High school equivalency</p><h2>Your GED study plan is ready.</h2><p>Build an eight-week plan for {gedStates[profile.gedState]?.label || 'Washington'}, then study real lessons and practice questions here in Versed.</p></div><button className="secondary" onClick={onOpenGed}>Open GED plan</button></section>
   </main>;
 }
 
@@ -434,6 +573,56 @@ function GedPlan({ profile, progress, onChooseState, onChooseTest, onToggleTask 
 
     <section className="official-resources"><div><p className="eyebrow">Official next steps</p><h2>Use the source, not a guess.</h2><p>These links are the places to verify current rules, practice, and schedule your test.</p></div><div className="resource-links">{state.sources.map((source) => <a key={source.href} href={source.href} target="_blank" rel="noreferrer">{source.label}<span aria-hidden="true">Open</span></a>)}</div></section>
   </main>;
+}
+
+function PersonalizedGedPlan({ profile, studyProgress, onChooseState, onChooseTest, onUpdateStudySettings, onOpenStudy }) {
+  const stateId = gedStates[profile.gedState] ? profile.gedState : 'washington';
+  const state = gedStates[stateId];
+  const testKey = stateId === 'washington' ? 'ged' : profile.gedTest === 'hiset' ? 'hiset' : 'ged';
+  const test = gedTestDetails[testKey];
+  const settings = getGedStudySettings(profile);
+  const subjects = gedSubjectsByTest[testKey] || gedSubjectsByTest.ged;
+  const sessions = buildGedStudySessions(stateId, testKey, settings).map((session) => ({ ...session, module: gedStudyModules.find((module) => module.id === session.moduleId) }));
+  const completed = sessions.filter((session) => studyProgress.completedSessions[session.id]).length;
+  const progressPercent = Math.round(completed / sessions.length * 100);
+  const nextSession = sessions.find((session) => !studyProgress.completedSessions[session.id]) || sessions[0];
+  const focusMinutes = getFocusMinutes(profile.focusLength);
+
+  return <main className="page ged-page personalized-ged-page">
+    <section className="ged-hero">
+      <div><p className="eyebrow">Your adaptive study path</p><h1>{state.label} {test.label} study plan</h1><p>{profile.name ? `${profile.name}, ` : ''}your answers set the order. We put subjects needing the most practice first, keep sessions to about {focusMinutes} minutes, and bring skills back for review.</p></div>
+      <div className="ged-progress" aria-label={`${progressPercent}% of your study plan complete`}><span>Plan progress</span><strong>{progressPercent}%</strong><div className="meter"><i style={{ width: `${progressPercent}%` }} /></div><small>{completed} of {sessions.length} study sessions complete</small></div>
+    </section>
+
+    <section className="ged-controls" aria-label="GED plan choices"><div><span>State</span><div className="segmented-control">{Object.entries(gedStates).map(([id, item]) => <button key={id} className={stateId === id ? 'active' : ''} onClick={() => onChooseState(id)}>{item.label}</button>)}</div></div>{stateId === 'louisiana' && <div><span>Testing route</span><div className="segmented-control">{['ged', 'hiset'].map((id) => <button key={id} className={testKey === id ? 'active' : ''} onClick={() => onChooseTest(id)}>{gedTestDetails[id].label}</button>)}</div></div>}<p>Rules can change. Confirm the official state requirements before paying or scheduling.</p></section>
+
+    <section className="plan-builder"><div className="plan-builder-copy"><p className="eyebrow">Build your plan</p><h2>Answer once. Study from here.</h2><p>These answers decide the order of your study sessions. Change them anytime; the plan will rebalance around what you need most.</p></div><div className="plan-builder-controls"><div className="plan-field"><span>How many study days feel realistic each week?</span><div className="segmented-control" role="group" aria-label="Study days per week">{[3, 4, 5].map((days) => <button key={days} className={settings.daysPerWeek === days ? 'active' : ''} onClick={() => onUpdateStudySettings({ daysPerWeek: days })}>{days} days</button>)}</div></div><div className="confidence-grid">{subjects.map((subject) => <div className="confidence-field" key={subject}><span>{gedSubjectLabels[subject]}</span><div className="confidence-options" role="group" aria-label={`${gedSubjectLabels[subject]} confidence`}>{confidenceOptions.map(([value, label]) => <button key={value} className={settings.confidence[subject] === value ? 'active' : ''} onClick={() => onUpdateStudySettings({ confidence: { [subject]: value } })}>{label}</button>)}</div></div>)}</div></div></section>
+
+    <section className="study-next"><div><p className="eyebrow">Your next study session</p><h2>{nextSession.review ? `Review: ${nextSession.module.title}` : nextSession.module.title}</h2><p>{nextSession.module.skill} {getStudyStylePrompt(profile)}</p><div className="study-meta"><span>Week {nextSession.week}, session {nextSession.day}</span><span>{focusMinutes}-minute focus</span><span>{gedSubjectLabels[nextSession.module.subject]}</span></div></div><button className="primary" onClick={() => onOpenStudy(nextSession)}>{completed === sessions.length ? 'Study a review session' : 'Study this session'}</button></section>
+
+    <section className="personal-study-plan"><div className="section-heading"><div><p className="eyebrow">Your eight-week schedule</p><h2>Every card is a study session here in Versed.</h2></div><span className="duration">{settings.daysPerWeek} sessions per week</span></div><div className="session-grid">{sessions.map((session) => { const isComplete = Boolean(studyProgress.completedSessions[session.id]); return <button key={session.id} className={`study-session ${isComplete ? 'complete' : ''}`} onClick={() => onOpenStudy(session)}><div><span>Week {session.week}</span><small>Session {session.day}</small></div><strong>{session.review ? `Review: ${session.module.title}` : session.module.title}</strong><p>{gedSubjectLabels[session.module.subject]}</p><b>{isComplete ? 'Completed - revisit' : session.id === nextSession.id ? 'Study next' : 'Open session'}</b></button>; })}</div></section>
+
+    <section className="ged-overview-grid"><article className="ged-info-card"><p className="eyebrow">Your test route</p><h2>{test.label} subjects</h2><ul>{test.subjects.map((subject) => <li key={subject}>{subject}</li>)}</ul><p className="readiness-note">{test.readiness}</p></article><article className="ged-info-card"><p className="eyebrow">Start here</p><h2>{state.credential} in {state.label}</h2><p>{state.overview}</p><div className="state-facts"><span>{test.subjects.length} subjects</span><span>{settings.daysPerWeek} days a week</span><span>Lessons included</span></div></article></section>
+
+    <section className="state-guidance"><div className="guidance-card"><p className="eyebrow">Eligibility and paperwork</p><h2>Check before you schedule</h2><ul>{state.eligibility.map((item) => <li key={item}>{item}</li>)}</ul></div><div className="guidance-card"><p className="eyebrow">Testing options</p><h2>Know your route</h2><ul>{state.testing.map((item) => <li key={item}>{item}</li>)}</ul></div></section>
+
+    <section className="official-resources"><div><p className="eyebrow">Official next steps</p><h2>Use the source, not a guess.</h2><p>Verify current rules, practice, and scheduling details through the official providers.</p></div><div className="resource-links">{state.sources.map((source) => <a key={source.href} href={source.href} target="_blank" rel="noreferrer">{source.label}<span aria-hidden="true">Open</span></a>)}</div></section>
+  </main>;
+}
+
+function GedStudy({ profile, studySession, onBack, onComplete }) {
+  const module = gedStudyModules.find((item) => item.id === studySession.moduleId) || gedStudyModules[0];
+  const [selected, setSelected] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => { setSelected(''); setSubmitted(false); setShowHint(false); }, [studySession.id]);
+  const isCorrect = submitted && selected === module.question.answer;
+  const focusMinutes = getFocusMinutes(profile.focusLength);
+  const confidence = getGedStudySettings(profile).confidence[module.subject];
+  const confidenceLabel = confidenceOptions.find(([value]) => value === confidence)?.[1] || 'Some practice';
+  const checkAnswer = () => { if (selected) setSubmitted(true); };
+
+  return <main className="page ged-study-page"><button className="back-link" onClick={onBack}>Back to my study plan</button><section className="study-session-head"><div><p className="eyebrow">Week {studySession.week}, session {studySession.day}</p><h1>{module.title}</h1><p>{module.skill}</p></div><div className="study-time"><span>Your pace</span><strong>{focusMinutes} min</strong><small>{gedSubjectLabels[module.subject]}</small></div></section><section className="study-workspace"><article className="study-lesson"><p className="eyebrow">Key idea</p><h2>Learn the move</h2><p>{module.teach}</p><div className="worked-example"><p className="eyebrow">Worked example</p><p>{module.example}</p></div><p className="study-style-note">{getStudyStylePrompt(profile)}</p></article><article className="study-practice"><p className="eyebrow">Try it now</p><h2>{module.question.prompt}</h2><div className="answer-options" role="group" aria-label="Choose an answer">{module.question.choices.map((choice) => <button key={choice} className={`${selected === choice ? 'selected' : ''} ${submitted && choice === module.question.answer ? 'correct' : ''} ${submitted && selected === choice && choice !== module.question.answer ? 'incorrect' : ''}`} onClick={() => { if (!submitted) setSelected(choice); }}>{choice}</button>)}</div>{!submitted && <div className="practice-actions"><button className="text-button" onClick={() => setShowHint(!showHint)}>{showHint ? 'Hide hint' : 'Show a hint'}</button><button className="primary" disabled={!selected} onClick={checkAnswer}>Check answer</button></div>}{showHint && !submitted && <p className="hint-box">{module.question.hint}</p>}{submitted && isCorrect && <div className="answer-feedback success"><p><b>That is right.</b> {module.question.explanation}</p><button className="primary" onClick={() => onComplete(studySession, module)}>Complete this session</button></div>}{submitted && !isCorrect && <div className="answer-feedback retry"><p><b>Not quite.</b> {module.question.hint}</p><button className="secondary" onClick={() => { setSelected(''); setSubmitted(false); setShowHint(true); }}>Try another answer</button></div>}</article><aside className="study-plan-note"><p className="eyebrow">Why this is next</p><h2>Your plan listens.</h2><p>You said {gedSubjectLabels[module.subject].toLowerCase()} needs <b>{confidenceLabel.toLowerCase()}</b>, so this skill appears early and returns again for review.</p><div><span>State</span><strong>{gedStates[profile.gedState]?.label || 'Washington'}</strong></div><div><span>Route</span><strong>{profile.gedState === 'louisiana' && profile.gedTest === 'hiset' ? 'HiSET' : 'GED'}</strong></div></aside></section></main>;
 }
 
 function LearningMap({ profile, session, onSelectLesson }) { return <main className="page map-page"><p className="eyebrow">Coding path - {profile.level}</p><h1>Your learning map</h1><p className="map-intro">Every lesson is here. Choose a unit to begin, revisit, or keep moving forward.</p><div className="map-road">{courseLessons.map((unit, index) => { const completed = session.completedLessonIndexes.includes(index); const current = index === session.lessonIndex && !session.completed; return <button onClick={() => onSelectLesson(index)} className={`map-node ${current ? 'current' : ''} ${completed ? 'complete' : ''}`} key={unit.title}><span>{completed ? 'Done' : index + 1}</span><strong>{unit.title}</strong><small>{completed ? 'Completed - revisit' : current ? 'Current lesson' : 'Start this lesson'}</small></button>; })}</div></main>; }
